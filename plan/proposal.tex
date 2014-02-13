@@ -43,7 +43,7 @@
 \begin{minipage}{0.4\textwidth}
 \begin{flushleft} \large
 \emph{Author:}\\
-Sai \textsc{Bi}
+Sai \textsc{Bi} (2011810096)
 \end{flushleft}
 \end{minipage}
 \begin{minipage}{0.4\textwidth}
@@ -80,9 +80,9 @@ Prof. Yizhou \textsc{Yu}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter*{Introduction}
-\addcontentsline{toc}{chapter}{Introduction}
-\section{Person identification}\index{Person identification}
+\chapter*{Project plan}
+\addcontentsline{toc}{chapter}{Project plan}
+\section{Person identification}\index{Introduction}
 Person identification is the process of identifying or verifying a person from 
 a digital image or video frame from a video source. With increasing number of
 surveillance cameras installed in public area and automatic identification
@@ -175,12 +175,59 @@ can be optimized well. The latter one learns a regression function that directly
 maps image appearance to the target output, and the complex variations of faces
 are learnt from large training data and testing is usually efficient.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Methodology}\index{Methodology}
+\subsection{Mutiple experts for body-based person identification}\index{Mutiple 
+experts for body-based person identification}
+We have noticed that highly discriminative feature descriptors such as local
+binary patterns(LBP) and color historgrams are critical to achieve high
+accuracy, and these feature descriptors are often of high dimensional. High 
+dimensional features are necessary to high performance, but they also introduce
+the extra problems like overfitting and large amount of computations. Therefore,
+dimension reduction methods such as PCA and CCA are often applied to 
+aggressively reduce the dimension of feature descriptors. However, in this 
+process subtle but highly discriminative information may be overlooked, 
+especially when many different types of features are combined together, which 
+decreases the discriminative power of the new features after dimension reduction.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter*{Genearl methodology}
-\addcontentsline{toc}{chapter}{Genearl methodology}
+Considering this, our solution is inspired by the behavior of human witnesses. 
+Imagine multiple witnesses work together in an effort to reenact a past event 
+and draw conclusions. Suppose none of them saw the complete event. Each of them 
+would try to recall the partial evidences he/she has and provide opinions 
+accordingly. At the end, a much more complete understanding of the event as 
+well as some conclusions can be reached by piecing together the partial 
+evidences and opinions from individual witnesses. In the same spirit, we 
+hope to propose a method that trains a group of witness functions, 
+each of which is only exposed to a random subset of the input features. Each 
+witness function produces an opinion according to the partial features it has. 
+We will aslo introduce a weighted fusion scheme to combine the opinions of multiple 
+witness functions together.
+
+\subsection{Regression with neural network for face keypoints detection}
+
+
+\section{Timeline}\index{Timeline}
+\begin{table}[t]
+    \begin{tabular}{|l|l|}
+    \hline
+    Oct 20th, 2013 & Design of algorithms for body-based person identification \\ \hline
+    Nov 30th, 2013 & Algorithm implementation \\ \hline
+    Jan 14th, 2013 & Testing and further adjustion \\ \hline
+    Jan 16th, 2014 & First presentation  \\ \hline
+    Jan 26th, 2014 & Detailed intermediate report \\ \hline
+    Feb 10th, 2014 & Design of algorithms for face keypoints detection \\ \hline
+    Feb 20th, 2014 & Algorithm implementation \\ \hline
+    Mar 28th, 2014 & Testing and further adjustion \\ \hline 
+    Apr 20th, 2014 & Final presentation and final report \\  \hline
+    May 4th, 2014 & Project exhibation \\ \hline
+    \end{tabular} 
+    \caption{Timeline}
+\end{table}
+
+
+
 
 
 
