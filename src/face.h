@@ -4,6 +4,7 @@
 #include <cmath>
 #include <fstream>
 
+
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
@@ -40,7 +41,7 @@ class Face{
         //read parameters from parameters.ini
         void readParameters();
 
-        
+        void faceDetector(); 
         
           
 };
