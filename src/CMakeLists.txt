@@ -14,8 +14,9 @@ if(Boost_FOUND)
     target_link_libraries(boostTest ${Boost_LIBRARIES})   
 endif()
 
-set(src_list_1 faceDetector.cpp)
-add_executable(facedetector ${src_list_1})
-target_link_libraries(facedetector ${OpenCV_LIBS})
+set(src_list_2 faceCrop.cpp)
+add_executable(faceCrop ${src_list_2})
+target_link_libraries(faceCrop ${OpenCV_LIBS})
+
 
 

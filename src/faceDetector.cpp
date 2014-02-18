@@ -108,6 +108,7 @@ void detectAndDisplay(Mat frame,char* fileName)
         cropRectangle.width = min(faces[i].width * 1.1, frame.size().width - cropRectangle.x-1);
         cropRectangle.height = min(faces[i].height * 1.3,frame.size().height - cropRectangle.y-1);
 
+        
         img(cropRectangle).copyTo(croppedImage);
         imwrite(fileName,croppedImage); 
     }
