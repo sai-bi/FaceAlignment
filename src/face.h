@@ -21,8 +21,12 @@ class Face{
         //grayscale testing images 
         vector<matrix<double>> testingImages;
         //mean shape of training images
-        vector<double> meanShape;
-        
+        vector<Point2d> meanShape;
+        vector<vector<Point2d>> facekeypoints;
+        vector<Point2d> imageStartCor;
+        vector<Point2d> imgSize; 
+        vector<Mat> faceImages;
+        int imgNum;
         
         vector<vector<double>> trainingFeatures;
         vector<vector<double>> testingFeatures;
