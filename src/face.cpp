@@ -29,7 +29,7 @@ void Face::readData(){
             keypoint.push_back(Point2d(x-imageX,y-imageY));
         }
         
-        facekeypoints.push_back(keypoint);
+        targetShape.push_back(keypoint);
     }
     
     fin.close();
@@ -65,15 +65,15 @@ void Face::getMeanShape(){
     }  
 
     // change the keypoint coordinates
-    for(int i = 0;i < facekeypoints[0].size();i++){
+    for(int i = 0;i < targetShape[0].size();i++){
         meanShape.push_back(Point2d(0,0));
     }
-    for(int i = 0;i < facekeypoints.size();i++){
-        for(int j = 0;j < facekeypoints[i].size();j++){
-            double x = facekeypoints[i][j].x * averageWidth / imgSize[i].x;
-            double y = facekeypoints[i][j].y * averageHeight / imgSize[i].y;  
-            facekeypoints[i][j].x = x;
-            facekeypoints[i][j].y = y;  
+    for(int i = 0;i < targetShape.size();i++){
+        for(int j = 0;j < targetShape[i].size();j++){
+            double x = targetShape[i][j].x * averageWidth / imgSize[i].x;
+            double y = targetShape[i][j].y * averageHeight / imgSize[i].y;  
+            targetShape[i][j].x = x;
+            targetShape[i][j].y = y;  
             
             meanShape[j].x += x;
             meanShape[j].y += y;
@@ -82,8 +82,8 @@ void Face::getMeanShape(){
    
     // get the mean shape  
     for(int i = 0;i < meanShape.size();i++){
-        meanShape[i].x = meanShape[i].x / facekeypoints.size();
-        meanShape[i].y = meanShape[i].y / facekeypoints.size();
+        meanShape[i].x = meanShape[i].x / targetShape.size();
+        meanShape[i].y = meanShape[i].y / targetShape.size();
     }
 }
 
@@ -119,9 +119,64 @@ void getFeaturePixelLocation(){
 
         featurePixelCoordinates.push_back(Point2d(x,y) - meanShape[minIndex]);
         nearestKeypointIndex.push_back(minIndex);
-    } 
- 
+    }  
 }
+
+
+void Face::extractFeature(){
+    vector<vector<double>> deltaShape; 
+    getDeltaShape(deltaShape);
+    //get a random direction
+    vector<double> randomDirection;
+    getRandomDirection(randomDirection); 
+
+    //project
+    vector<double> scalar;
+    for(int i = 0;i < deltaShape.size();i++){
+        double product = 0;
+        for(int j = 0;j < randomDirection.size();j++){
+            product = product + randomDirection[j] * deltaShape[i][j];
+        }   
+        scalar.push_back(product);
+    }
+    
+    
+     
+
+}
+
+void Face::getDeltaShape(vector<vector<double>& deltaShape){
+    //calculate the difference between current shape and target shape
+    for(int i = 0;i < currentShape.size();i++){
+        vector<Point2d> temp;
+        for(int j = 0;j < currentShape[i].size();j++){
+            // temp.push_back(currentShape[i][j] - targetShape[i][j]); 
+            Point2d delta = currentShape[i][j] - targetShape[i][j];
+            deltaShape.push_back(delta.x);
+            deltaShape.push_back(delta.y);
+        }
+        deltaShape.push_back(temp);
+    }
+}
+
+void Face::getRandomDirection(vector<double>& randomDirection){
+    srand(time(NULL));
+    double sum = 0;
+    for(int i = 0;i < 2 * keypointNum;i++){
+        int temp = rand()%100 + 1; 
+        randomDirection.push_back(temp);
+        sum = sum + temp * temp;
+    }
+
+    sum = sqrt(sum);
+    
+    // normalize it;
+    for(int i = 0;i < randomDirection.size();i++){
+        randomDirection[i] = randomDirection[i] / sum;  
+    }
+}
+
+
 
 
 

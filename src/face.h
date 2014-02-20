@@ -4,11 +4,12 @@
 #include <cmath>
 #include <fstream>
 #include <algorithm>
-#include <vector>
+// #include <vector>
 #include <ctime>
 #include <limits>
 #include <cstdlib>
-// #include <boost/numeric/ublas/vector.hpp>
+
+#include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -25,7 +26,7 @@ class Face{
         //preloaded parameters
         int imgNum;
         int featurePixelNum;
-
+        int keypointNum;
 
         //grayscale training images
         vector<matrix<double>> trainingImages;
@@ -34,7 +35,9 @@ class Face{
         //mean shape of training images
         vector<Point2d> meanShape;
         //face keypoints locations of each face 
-        vector<vector<Point2d>> facekeypoints;
+        vector<vector<Point2d>> targetShape;
+        //current shape 
+        vector<vector<Point2d>> currentShape;
         //start coordinates of each image
         vector<Point2d> imageStartCor;
         //the size of each image
@@ -50,6 +53,8 @@ class Face{
         vector<Point2d> featurePixelCoordinates;
         //index of nearest coordinates
         vector<int> nearestKeypointIndex;
+
+        
         
         vector<vector<double>> trainingFeatures;
         vector<vector<double>> testingFeatures;
