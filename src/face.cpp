@@ -10,10 +10,6 @@ Face::Face(){
     
 }
 
-void Face::getMeanShape(){
-    // initialize
-}
-
 
 void Face::readData(){
     ifstream fin;
@@ -55,8 +51,6 @@ void Face::getMeanShape(){
     // average all keypoints in the same position
     
     //get average size
-    int averageWidth;
-    int averageHeight;
     for(int i = 0;i < imgSize.size();i++){
         averageWidth += imgSize[i].x;
         averageHeight += imgSize[i].y;  
@@ -93,7 +87,41 @@ void Face::getMeanShape(){
     }
 }
 
+void getFeaturePixelLocation(){
+    // sample a number of pixels from the face images
+    // get their coordinates related to the nearest face keypoints
+    
+    // random face pixels selected
+    vector<int> allIndex;
+    for(int i = 0;i < averageHeight * averageWidth;i++){
+        allIndex.push_back(i); 
+    }    
+    
+    srand(time(NULL));
 
+    random_shuffle(allIndex.begin(),allIndex.end());
+
+    for(int i = 0;i < featurePixelNum;i++){
+        int x = allIndex[i] % averageWidth;
+        int y = allIndex[i] / averageWidth;
+        
+        // find the nearest keypoint
+        double dist = MAX;
+        int minIndex = 0;
+        Point2d relativeCoordinates;
+        for(int j = 0;j < meanShape.size();i++){
+            double temp = norm(Point2d(x,y)-meanShape[j]);
+            if(temp < dist){
+                dist = temp;
+                minIndex = j;
+            } 
+        }
+
+        featurePixelCoordinates.push_back(Point2d(x,y) - meanShape[minIndex]);
+        nearestKeypointIndex.push_back(minIndex);
+    } 
+ 
+}
 
 
 
