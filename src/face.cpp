@@ -105,24 +105,17 @@ void Face::getFeaturePixelLocation(){
         int x = allIndex[i] % averageWidth;
         int y = allIndex[i] / averageWidth;
         
-        vector<Point2d> temp1;
-        vector<int> temp2;
-        // find the nearest keypoint
-        for(int j = 0;j < targetShape.size();j++){
-            double dist = MAX;
-            int minIndex = 0; 
-            for(int k = 0;k < targetShape[j].size();k++){
-                double dist1 = norm(Point2d(x,y) - targetShape[j][k]);
-                if(dist1 < dist){
-                    dist = dist1;
-                    minIndex = j;
-                }
+        double dist = MAX;
+        double minIndex = 0;
+        for(int j=0;j < meanShape.size();j++){
+            double temp = norm(Point2d(x,y) - meanShape[j]);
+            if(temp < dist){
+                dist = temp;
+                minIndex = j;
             } 
-            temp1.push_back(Point2d(x,y) - targetShape[j][minIndex]);
-            temp2.push_back(minIndex);
         } 
-        featurePixelCoordinates.push_back(temp1);
-        nearestKeypointIndex.push_back(temp2);
+        featurePixelCoordinates.push_back(Point2d(x,y) - meanShape[minIndex]);
+        nearestKeypointIndex.push_back(minIndex);
     }  
 }
 
@@ -192,25 +185,50 @@ void Face::firstLevelRegression(){
         
         for(int j = 0;j < featurePixelCoordinates.size();j++){
             vector<Point2d> temp;
-            vector<double> temp2;
-            for(int k = 0;k < featurePixelCoordinates[j].size();k++){
-                int nearestIndex = nearestKeypointIndex[j][k];
-                Point2d temp1 = currentShape[k][nearestIndex] + featurePixelCoordinates[j][k];
-                temp.push_back(temp1);
-
-                double tempDensity =    
+            vector<double> temp1;
+            for(int k = 0;k < meanShape.size();k++){
+                Point2d currLocation;
+                currLocation = featurePixelCoordinates[j] + currentShape[nearestKeypointIndex[k]];
+                temp.push_back(currLocation);
+                temp1.push_back(trainingImages((int)(currLocation.y),(int)(currLocation.x))); 
             }
             currentFeatureLocation.push_back(temp);
-        }   
-            
-        // select the best feature
-        vector<vector<double>> pixelDensity;
+            pixelDensity.push_back(temp1);
+        }     
+    
+        // select feature
         
-        
+        // calculate the covariance of f_i and f_j
+        zero_matrix<double> covariance(featurePixelNum,featurePixelNum);
+    
+        for(int j = 0;j < featurePixelNum;j++){
+            for(int k = j+1;k < featurePixelNum;k++){
+                double temp = getCovariance(pixelDensity[j],pixelDensity[k]);
+                covariance(j,k) = temp;
+                covariance(k,j) = temp;
+            }
+        }
+        secondLevelRegression();    
     }
 
+    
 }
 
 void Face::secondLevelRegression(){
 
+}
+
+
+double Face::getCovariance(const vector<double>& v1, const vector<double>& v2){
+    double expV1 = accumulate(v1.begin(),v1.end(),0);
+    double expV2 = accumulate(v2.begin(),v2.end(),0);
+
+    expV1 = expV1 / v1.size();
+    expV2 = expV2 / v2.size();
+
+    double total = 0;
+    for(int i = 0;i < v1.size();i++){
+        total = total + (v1[i] - expV1) * (v2[i] - expV2); 
+    }
+    return total / v1.size();
 }

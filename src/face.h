@@ -52,10 +52,9 @@ class Face{
 
         //the coordinates of each feature pixel, relative to the nearest
         //keypoint 
-        vector<vector<Point2d>> featurePixelCoordinates;
+        vector<Point2d> featurePixelCoordinates;
         //index of nearest coordinates
-        vector<vector<int>> nearestKeypointIndex;
-
+        vector<int> nearestKeypointIndex;
         
         
         vector<vector<double>> trainingFeatures;
