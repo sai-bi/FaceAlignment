@@ -120,30 +120,73 @@ void Face::getFeaturePixelLocation(){
 }
 
 
-void Face::extractFeature(){
+void Face::extractFeature(const matrix<double>& covariance,const vector<vector<double>>& pixelDensity,
+        const vector<Point2i> selectedFeatureIndex){
     vector<vector<double>> deltaShape; 
     getDeltaShape(deltaShape);
+
     //get a random direction
-    vector<double> randomDirection;
-    getRandomDirection(randomDirection); 
+    for(int i = 0;i < featureNumInFern;i++){    
+        
+        // get a random direction
+        vector<double> randomDirection;
+        getRandomDirection(randomDirection);
 
-    //project
-    vector<double> scalar;
-    for(int i = 0;i < deltaShape.size();i++){
-        double product = 0;
-        for(int j = 0;j < randomDirection.size();j++){
-            product = product + randomDirection[j] * deltaShape[i][j];
-        }   
-        scalar.push_back(product);
-    }
+        // calculate the product
+        vector<double> projectResult;
+        for(int j = 0;j < deltaShape.size();j++){
+            projectResult.push_back(product(deltaShape[i],randomDirection));
+        }
+        
+        // calculate cov(y,f_i)
+        vector<double> covarianceYF;
+        for(int j = 0;j < pixelDensity.size();j++){
+            covarianceYF.push_back(getCovariance(projectResult,pixelDensity[j]));      
+        }
+        
+        // get the pair with highest correlation corr(y,fi - fj);  
+        // zero_matrix<double> correlation;
+        double stdY = sqrt(covariance(projectResult,projectResult)); 
+        
+        double selectedIndex1;
+        double selectedIndex2;
+        double hightest = MIN;
+        for(int j = 0;j < featurePixelNum;j++){
+            for(int k = j+1;k < featurePixelNum;k++){
+                double temp1 = covarianceYF[j];
+                double temp2 = covarianceYF[k];
+                double temp3 = covariance(j,k);
+                double temp4 = temp1 * temp2 / (sqrt(temp3) * stdY);
 
-    vector<vector<double>> pixelValue;
-    
-    for(int i = 0;i < featurePixelNum;i++){
-        vector<double> temp;
+                if(abs(temp4) > highest){
+                    if(temp4 > 0){
+                        selectedIndex1 = j;
+                        selectedIndex2 = k;
+                    }
+                    else{
+                        selectedIndex1 = k;
+                        selectedIndex2 = j;
+                    }
+                }
+            }
+        }
+
+        selectedFeatureIndex.push_back(Point2i(selectedIndex1,selectedIndex2));
     } 
 
+    
+
 }
+
+double Face::product(const vector<double>& v1, const vector<double>& v2){
+    double result = 0;
+    for(int i = 0;i < v1.size();i++){
+        result = result + v1[i] * v2[i]; 
+    }
+
+    return result;
+}
+
 
 void Face::getDeltaShape(vector<vector<double>& deltaShape){
     //calculate the difference between current shape and target shape
@@ -208,14 +251,19 @@ void Face::firstLevelRegression(){
                 covariance(k,j) = temp;
             }
         }
-        secondLevelRegression();    
+        secondLevelRegression(covariance,pixelDensity);    
     }
 
     
 }
 
-void Face::secondLevelRegression(){
+void Face::secondLevelRegression(const matrix<double>& covariance,const vector<double>& pixelDensity){
+    for(int i = 0;i < secondLevelNum;i++){
+        // select best feature
+        vector<Point2i> selectedFeatureIndex;  
+        extractFeature(covariance,pixelDensity,selectedFeatureIndex); 
 
+    }   
 }
 
 

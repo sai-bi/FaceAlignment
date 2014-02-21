@@ -29,6 +29,7 @@ class Face{
         int keypointNum;
         int firstLevelNum;
         int secondLevelNum;
+        int featureNumInFern;
 
         //grayscale training images
         vector<matrix<double>> trainingImages;
@@ -88,7 +89,7 @@ class Fern{
         vector<Point2d> deltaShape;
 
         vector<Point2d> threholds; 
-}
+};
 
 
 
