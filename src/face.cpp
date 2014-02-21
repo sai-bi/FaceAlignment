@@ -87,7 +87,7 @@ void Face::getMeanShape(){
     }
 }
 
-void getFeaturePixelLocation(){
+void Face::getFeaturePixelLocation(){
     // sample a number of pixels from the face images
     // get their coordinates related to the nearest face keypoints
     
@@ -105,20 +105,24 @@ void getFeaturePixelLocation(){
         int x = allIndex[i] % averageWidth;
         int y = allIndex[i] / averageWidth;
         
+        vector<Point2d> temp1;
+        vector<int> temp2;
         // find the nearest keypoint
-        double dist = MAX;
-        int minIndex = 0;
-        Point2d relativeCoordinates;
-        for(int j = 0;j < meanShape.size();i++){
-            double temp = norm(Point2d(x,y)-meanShape[j]);
-            if(temp < dist){
-                dist = temp;
-                minIndex = j;
+        for(int j = 0;j < targetShape.size();j++){
+            double dist = MAX;
+            int minIndex = 0; 
+            for(int k = 0;k < targetShape[j].size();k++){
+                double dist1 = norm(Point2d(x,y) - targetShape[j][k]);
+                if(dist1 < dist){
+                    dist = dist1;
+                    minIndex = j;
+                }
             } 
-        }
-
-        featurePixelCoordinates.push_back(Point2d(x,y) - meanShape[minIndex]);
-        nearestKeypointIndex.push_back(minIndex);
+            temp1.push_back(Point2d(x,y) - targetShape[j][minIndex]);
+            temp2.push_back(minIndex);
+        } 
+        featurePixelCoordinates.push_back(temp1);
+        nearestKeypointIndex.push_back(temp2);
     }  
 }
 
@@ -139,9 +143,12 @@ void Face::extractFeature(){
         }   
         scalar.push_back(product);
     }
+
+    vector<vector<double>> pixelValue;
     
-    
-     
+    for(int i = 0;i < featurePixelNum;i++){
+        vector<double> temp;
+    } 
 
 }
 
@@ -177,6 +184,33 @@ void Face::getRandomDirection(vector<double>& randomDirection){
 }
 
 
+void Face::firstLevelRegression(){
+    for(int i = 0;i < firstLevelNum;i++){
+        // get the feature pixel location based on currentShape             
+        vector<vector<Point2d>> currentFeatureLocation;
+        vector<vector<double>> pixelDensity;
+        
+        for(int j = 0;j < featurePixelCoordinates.size();j++){
+            vector<Point2d> temp;
+            vector<double> temp2;
+            for(int k = 0;k < featurePixelCoordinates[j].size();k++){
+                int nearestIndex = nearestKeypointIndex[j][k];
+                Point2d temp1 = currentShape[k][nearestIndex] + featurePixelCoordinates[j][k];
+                temp.push_back(temp1);
 
+                double tempDensity =    
+            }
+            currentFeatureLocation.push_back(temp);
+        }   
+            
+        // select the best feature
+        vector<vector<double>> pixelDensity;
+        
+        
+    }
 
+}
 
+void Face::secondLevelRegression(){
+
+}

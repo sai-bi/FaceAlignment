@@ -27,6 +27,8 @@ class Face{
         int imgNum;
         int featurePixelNum;
         int keypointNum;
+        int firstLevelNum;
+        int secondLevelNum;
 
         //grayscale training images
         vector<matrix<double>> trainingImages;
@@ -50,9 +52,9 @@ class Face{
 
         //the coordinates of each feature pixel, relative to the nearest
         //keypoint 
-        vector<Point2d> featurePixelCoordinates;
+        vector<vector<Point2d>> featurePixelCoordinates;
         //index of nearest coordinates
-        vector<int> nearestKeypointIndex;
+        vector<vector<int>> nearestKeypointIndex;
 
         
         
@@ -77,6 +79,17 @@ class Face{
         
           
 };
+
+class Fern{
+    public:
+        // the index of feature pixel pairs 
+        vector<Point2i> featurePixelIndex;
+
+        // output of delta shape
+        vector<Point2d> deltaShape;
+
+        vector<Point2d> threholds; 
+}
 
 
 
