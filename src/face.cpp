@@ -10,7 +10,6 @@ Face::Face(){
     
 }
 
-
 void Face::readData(){
     ifstream fin;
     fin.open("./../data/LFPW/keypointsInfor.txt");
@@ -262,7 +261,10 @@ void Face::secondLevelRegression(const matrix<double>& covariance,const vector<d
         // select best feature
         vector<Point2i> selectedFeatureIndex;  
         extractFeature(covariance,pixelDensity,selectedFeatureIndex); 
-
+        
+        //construct a fern using selected best features 
+        
+         
     }   
 }
 
@@ -280,3 +282,5 @@ double Face::getCovariance(const vector<double>& v1, const vector<double>& v2){
     }
     return total / v1.size();
 }
+
+
