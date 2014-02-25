@@ -304,6 +304,15 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
     // get output
     for(int i = 0;i < bins.size();i++){
         vector<Point2d> currFernOutput;
+
+        if(bins[i].size() == 0){
+            for(int j = 0;j < keypointNum;j++){
+                currFernOutput.push_back(Point2d(0,0));
+            } 
+            fernOutput.push_back(currFernOutput);
+            continue;
+        }
+        
         for(int j = 0;j < bins[i].size();j++){
             int shapeIndex = bins[i][j];
             if(j == 0){
@@ -314,6 +323,13 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
                             currentShape[shapeIndex]));
             }
         }
+
+        for(int j = 0;j < currFernOutput.size();j++){
+            double temp = 1.0/((1 + shrinkage/bins[i].size()) * bins[i].size());
+            currFernOutput[j] = temp * currFernOutput[j] 
+        }
+
+
         fernOutput.push_back(currFernOutput);
     }
 }

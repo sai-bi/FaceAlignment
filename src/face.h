@@ -30,6 +30,7 @@ class Face{
         int firstLevelNum;
         int secondLevelNum;
         int featureNumInFern;
+        double shrinkage;
 
         //grayscale training images
         vector<matrix<double>> trainingImages;
