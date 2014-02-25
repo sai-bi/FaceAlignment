@@ -228,9 +228,9 @@ void Face::firstLevelRegression(){
         for(int j = 0;j < featurePixelCoordinates.size();j++){
             vector<Point2d> temp;
             vector<double> temp1;
-            for(int k = 0;k < meanShape.size();k++){
+            for(int k = 0;k < currentShape.size();k++){
                 Point2d currLocation;
-                currLocation = featurePixelCoordinates[j] + currentShape[nearestKeypointIndex[k]];
+                currLocation = featurePixelCoordinates[j] + currentShape[k][nearestKeypointIndex[k]];
                 temp.push_back(currLocation);
                 temp1.push_back(trainingImages((int)(currLocation.y),(int)(currLocation.x))); 
             }
@@ -256,16 +256,66 @@ void Face::firstLevelRegression(){
     
 }
 
-void Face::secondLevelRegression(const matrix<double>& covariance,const vector<double>& pixelDensity){
+void Face::secondLevelRegression(const matrix<double>& covariance,const vector<vector<double>>& pixelDensity){
     for(int i = 0;i < secondLevelNum;i++){
         // select best feature
         vector<Point2i> selectedFeatureIndex;  
         extractFeature(covariance,pixelDensity,selectedFeatureIndex); 
         
         //construct a fern using selected best features 
-        
-         
+        constructFern(selectedFeatureIndex); 
     }   
+}
+
+void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
+        const vector<vector<double>>& pixelDensity){
+    // turn each shape into a scalar according to relative intensity of pixels
+    // generate random threholds
+    // divide shapes into bins based on threholds and scalars
+    // for each bin, calculate its output
+    
+    vector<int> fernResult;
+    vector<vector<Point2d>> fernOutput;
+    int binNum = pow(2.0,featureNumInFern);
+    vector<vector<int>> bins;
+
+    for(int i = 0;i < binNum;i++){
+        vector<int> temp;
+        bins.push_back(temp);
+    }
+
+    for(int i = 0;i < currentShape.size();i++){
+        int tempResult = 0;
+        for(int j = 0;j < selectedFeatureIndex.size();j++){
+            double density1 = pixelDensity[selectedFeatureIndex[j].x][i];
+            double density2 = pixelDensity[selectedFeatureIndex[j].y][i];
+
+            // binary number
+            if(density1 > density2){
+                tempResult = tempResult + 2 ^ j; 
+            }
+        }
+        fernResult.push_back(tempResult);
+        bins[tempResult].push_back(i); 
+    }
+
+    // get random threhold, the number of bins is 2^featureNumInFern; 
+    
+    // get output
+    for(int i = 0;i < bins.size();i++){
+        vector<Point2d> currFernOutput;
+        for(int j = 0;j < bins[i].size();j++){
+            int shapeIndex = bins[i][j];
+            if(j == 0){
+                currFernOutput = vectorMinus(targetShape[shapeIndex], currentShape[shapeIndex]);
+            }
+            else{
+                currFernOutput = vectorPlus(currFernOutput, vectorMinus(targetShape[shapeIndex],
+                            currentShape[shapeIndex]));
+            }
+        }
+        fernOutput.push_back(currFernOutput);
+    }
 }
 
 
@@ -283,4 +333,23 @@ double Face::getCovariance(const vector<double>& v1, const vector<double>& v2){
     return total / v1.size();
 }
 
+vector<Point2d> Face::vectorMinus(const vector<Point2d>& shape1, const vector<Point2d>& shape2){
+    vector<Point2d> result;
+
+    for(int i = 0;i < shape1.size();i++){
+        result.push_back(shape1[i] - shape2[i]);
+    }
+
+    return result;
+}
+
+vector<Point2d> Face::vectorPlus(const vector<Point2d>& shape1, const vector<Point2d>& shape2){
+    vector<Point2d> result;
+
+    for(int i = 0;i < shape1.size();i++){
+        result.push_back(shape1[i] + shape2[i]);
+    }
+
+    return result;
+}
 
