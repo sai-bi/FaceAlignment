@@ -7,18 +7,23 @@
 
 void Face::run(){
     // read parameters
+    cout<<"Read parameters..."<<endl;
     readParameters();
 
     // read training data
+    cout<<"Read data..."<<endl;
     readData();
 
     // calculate mean shape;
+    cout<<"Get mean shape..."<<endl;
     getMeanShape();
 
     // get feature location
+    cout<<"Get feature pixel locations..."<<endl;
     getFeaturePixelLocation();
 
     // regression
+    cout<<"First level regression..."<<endl;
     firstLevelRegression();
 
 }
@@ -34,11 +39,16 @@ void Face::readParameters(){
     keypointNum = pt.get<int>("Training.keypointNum");
     featureNumInFern = pt.get<int>("Training.featureNumInFern");
     shrinkage = pt.get<int>("Training.shrinkage");
+    debug = pt.get<int>("Training.debug");
+
+    // cout<<"Shrinkage:"<<shrinkage<<endl;
+
 }
 
 
 Face::Face(){
-    
+    averageHeight = 0;
+    averageWidth = 0;    
 }
 
 void Face::readData(){
@@ -67,8 +77,8 @@ void Face::readData(){
 
     // read all image
     Mat img; 
-    string imgName = "./../data/LFPW/lfpwFaces/";
     for(int i = 1;i < imgNum+1;i++){  
+        string imgName = "./../data/LFPW/lfpwFaces/";
         imgName = imgName + to_string(i) + ".jpg";
         img = imread(imgName.c_str());
         faceImages.push_back(img);
@@ -89,6 +99,10 @@ void Face::getMeanShape(){
     
     averageWidth = averageWidth / imgSize.size();
     averageHeight = averageHeight / imgSize.size();
+
+    if(debug){
+        cout<<"Average width and height "<<averageWidth<<" "<<averageHeight<<endl;
+    }
     
     // scale all images
     for(int i = 0;i < faceImages.size();i++){
