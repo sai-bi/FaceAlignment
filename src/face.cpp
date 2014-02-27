@@ -262,6 +262,16 @@ void Face::secondLevelRegression(const matrix<double>& covariance,const vector<v
         vector<Point2i> selectedFeatureIndex;  
         extractFeature(covariance,pixelDensity,selectedFeatureIndex); 
         
+        // record selected feature index 
+        ofstream fout;
+        fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::append);
+
+        for(int i = 0;i < selectedFeatureIndex.size();i++){
+            fout<<selectedFeatureIndex[i]<<" ";
+        }
+        fout<<endl;
+        fout.close();
+
         //construct a fern using selected best features 
         constructFern(selectedFeatureIndex); 
     }   
@@ -329,8 +339,25 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
             currFernOutput[j] = temp * currFernOutput[j] 
         }
 
+         
+
 
         fernOutput.push_back(currFernOutput);
+    }
+    
+    ofstream fout;
+    fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::append);
+    for(int i = 0;i < fernOutput.size();i++){
+        for(int j = 0;j < fernOutput[i].size();i++){
+            fout<<fernOutput[i][j]<<" "; 
+        }
+        fout<<endl;
+    }
+    
+    // update current shape
+    for(int i = 0;i < currentShape.size();i++){
+        int binIndex = fernResult[i];
+        currentShape[i] = vectorPlus(currentShape[i],fernOutput[binIndex]); 
     }
 }
 
