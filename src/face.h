@@ -4,22 +4,23 @@
 #include <cmath>
 #include <fstream>
 #include <algorithm>
-// #include <vector>
+#include <vector>
 #include <ctime>
 #include <limits>
 #include <cstdlib>
+#include "cv.h"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
-using namespace boost::numeric::ublas;
+using namespace cv;
 using namespace std;
 
 
-#define MAX numeric_limits<double>::max(); 
-#define MIN numeric_limits<double>::min();
+#define MAXNUM numeric_limits<double>::max(); 
+#define MINNUM numeric_limits<double>::min();
 
 class Face{
     public:
@@ -33,15 +34,15 @@ class Face{
         double shrinkage;
 
         //grayscale training images
-        vector<matrix<double>> trainingImages;
+        // vector<Mat> trainingImages;
         //grayscale testing images 
-        vector<matrix<double>> testingImages;
+        // vector<Mat> testingImages;
         //mean shape of training images
         vector<Point2d> meanShape;
         //face keypoints locations of each face 
-        vector<vector<Point2d>> targetShape;
+        vector<vector<Point2d> > targetShape;
         //current shape 
-        vector<vector<Point2d>> currentShape;
+        vector<vector<Point2d> > currentShape;
         //start coordinates of each image
         vector<Point2d> imageStartCor;
         //the size of each image
@@ -59,10 +60,12 @@ class Face{
         vector<int> nearestKeypointIndex;
 
 
-        vector<vector<double>> trainingFeatures;
-        vector<vector<double>> testingFeatures;
+        // vector<vector<double> > trainingFeatures;
+        // vector<vector<double> > testingFeatures;
 
         Face();
+
+        void run();
 
         //get the meanShape
         void getMeanShape();
@@ -70,45 +73,26 @@ class Face{
         void readData();
 
         //extract feature
-        void extractFeature(matrix<double> iamge);
 
         void  getFeaturePixelLocation(); 
-        void  extractFeature(const matrix<double>& covariance,const vector<vector<double>>& pixelDensity,
-                const vector<Point2i> selectedFeatureIndex);
+        void  extractFeature(const Mat& covariance,const vector<vector<double> >& pixelDensity,
+                 vector<Point2i> selectedFeatureIndex);
 
         double  product(const vector<double>& v1, const vector<double>& v2);
-        void  getDeltaShape(vector<vector<double>& deltaShape);
+        void  getDeltaShape(vector<vector<double> >& deltaShape);
         void  getRandomDirection(vector<double>& randomDirection);
         void  firstLevelRegression();
-        void  secondLevelRegression(const matrix<double>& covariance,const vector<vector<double>>& pixelDensity);
+        void  secondLevelRegression(const Mat& covariance,const vector<vector<double> >& pixelDensity);
         void  constructFern(const vector<Point2i>& selectedFeatureIndex,
-                const vector<vector<double>>& pixelDensity);
+                const vector<vector<double> > & pixelDensity);
         double  getCovariance(const vector<double>& v1, const vector<double>& v2);
         vector<Point2d>  vectorMinus(const vector<Point2d>& shape1, const vector<Point2d>& shape2);
         vector<Point2d>  vectorPlus(const vector<Point2d>& shape1, const vector<Point2d>& shape2);
 
-
-
-        //read parameters from parameters.ini
-        // void readParameters();
-
-        // void faceDetector(); 
-
+        // read parameters from parameters.ini
+        void readParameters();
 
 };
-/* 
-class Fern{
-    public:
-        // the index of feature pixel pairs 
-        vector<Point2i> featurePixelIndex;
-
-        // output of delta shape
-        vector<Point2d> deltaShape;
-
-        vector<Point2d> threholds; 
-};
- */
-
 
 #endif
 

@@ -5,7 +5,38 @@
 
 #include "face.h"
 
- 
+void Face::run(){
+    // read parameters
+    readParameters();
+
+    // read training data
+    readData();
+
+    // calculate mean shape;
+    getMeanShape();
+
+    // get feature location
+    getFeaturePixelLocation();
+
+    // regression
+    firstLevelRegression();
+
+}
+
+void Face::readParameters(){
+    boost::property_tree::ptree pt;
+    boost::property_tree::ini_parser::read_ini("./parameters.ini",pt);
+    
+    imgNum = pt.get<int>("Training.imgNum");
+    featurePixelNum = pt.get<int>("Training.featurePixelNum");
+    firstLevelNum = pt.get<int>("Training.firstLevelNum");
+    secondLevelNum = pt.get<int>("Training.secondLevelNum");
+    keypointNum = pt.get<int>("Training.keypointNum");
+    featureNumInFern = pt.get<int>("Training.featureNumInFern");
+    shrinkage = pt.get<int>("Training.shrinkage");
+}
+
+
 Face::Face(){
     
 }
@@ -19,13 +50,14 @@ void Face::readData(){
     double x;
     double y;
     
+    // read image info
     while(fin>>imageX>>imageY>>x>>y){
         imageStartCor.push_back(Point2d(imageX,imageY));
         imgSize.push_back(Point2d(x,y)); 
         vector<Point2d> keypoint;
         for(int i = 0;i < 35;i++){
             fin>>x>>y;
-            keypoint.push_back(Point2d(x-imageX,y-imageY));
+            keypoint.push_back(Point2d(x,y));
         }
         
         targetShape.push_back(keypoint);
@@ -64,7 +96,7 @@ void Face::getMeanShape(){
     }  
 
     // change the keypoint coordinates
-    for(int i = 0;i < targetShape[0].size();i++){
+    for(int i = 0;i < keypointNum;i++){
         meanShape.push_back(Point2d(0,0));
     }
     for(int i = 0;i < targetShape.size();i++){
@@ -104,8 +136,8 @@ void Face::getFeaturePixelLocation(){
         int x = allIndex[i] % averageWidth;
         int y = allIndex[i] / averageWidth;
         
-        double dist = MAX;
-        double minIndex = 0;
+        double dist = MAXNUM;
+        int minIndex = 0;
         for(int j=0;j < meanShape.size();j++){
             double temp = norm(Point2d(x,y) - meanShape[j]);
             if(temp < dist){
@@ -119,9 +151,10 @@ void Face::getFeaturePixelLocation(){
 }
 
 
-void Face::extractFeature(const matrix<double>& covariance,const vector<vector<double>>& pixelDensity,
-        const vector<Point2i> selectedFeatureIndex){
-    vector<vector<double>> deltaShape; 
+void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& pixelDensity,
+        vector<Point2i> selectedFeatureIndex){
+
+    vector<vector<double> > deltaShape; 
     getDeltaShape(deltaShape);
 
     //get a random direction
@@ -145,16 +178,16 @@ void Face::extractFeature(const matrix<double>& covariance,const vector<vector<d
         
         // get the pair with highest correlation corr(y,fi - fj);  
         // zero_matrix<double> correlation;
-        double stdY = sqrt(covariance(projectResult,projectResult)); 
+        double stdY = sqrt(getCovariance(projectResult,projectResult)); 
         
         double selectedIndex1;
         double selectedIndex2;
-        double hightest = MIN;
+        double highest = MINNUM;
         for(int j = 0;j < featurePixelNum;j++){
             for(int k = j+1;k < featurePixelNum;k++){
                 double temp1 = covarianceYF[j];
                 double temp2 = covarianceYF[k];
-                double temp3 = covariance(j,k);
+                double temp3 = covariance.at<double>(k,j);
                 double temp4 = temp1 * temp2 / (sqrt(temp3) * stdY);
 
                 if(abs(temp4) > highest){
@@ -187,15 +220,15 @@ double Face::product(const vector<double>& v1, const vector<double>& v2){
 }
 
 
-void Face::getDeltaShape(vector<vector<double>& deltaShape){
+void Face::getDeltaShape(vector<vector<double> >& deltaShape){
     //calculate the difference between current shape and target shape
     for(int i = 0;i < currentShape.size();i++){
-        vector<Point2d> temp;
+        vector<double> temp;
         for(int j = 0;j < currentShape[i].size();j++){
             // temp.push_back(currentShape[i][j] - targetShape[i][j]); 
             Point2d delta = currentShape[i][j] - targetShape[i][j];
-            deltaShape.push_back(delta.x);
-            deltaShape.push_back(delta.y);
+            temp.push_back(delta.x);
+            temp.push_back(delta.y);
         }
         deltaShape.push_back(temp);
     }
@@ -220,19 +253,31 @@ void Face::getRandomDirection(vector<double>& randomDirection){
 
 
 void Face::firstLevelRegression(){
+
+    // first initial currentShape
+    for(int i = 0;i < targetShape.size();i++){
+        currentShape.push_back(meanShape);
+    }
+
     for(int i = 0;i < firstLevelNum;i++){
         // get the feature pixel location based on currentShape             
-        vector<vector<Point2d>> currentFeatureLocation;
-        vector<vector<double>> pixelDensity;
+        vector<vector<Point2d> > currentFeatureLocation;
+        vector<vector<double> > pixelDensity;
         
         for(int j = 0;j < featurePixelCoordinates.size();j++){
             vector<Point2d> temp;
             vector<double> temp1;
             for(int k = 0;k < currentShape.size();k++){
                 Point2d currLocation;
-                currLocation = featurePixelCoordinates[j] + currentShape[k][nearestKeypointIndex[k]];
+                currLocation = featurePixelCoordinates[j] + currentShape[k][nearestKeypointIndex[j]];
                 temp.push_back(currLocation);
-                temp1.push_back(trainingImages((int)(currLocation.y),(int)(currLocation.x))); 
+                // temp1.push_back(trainingImages((int)(currLocation.y),(int)(currLocation.x))); 
+                Vec3b color = faceImages[k].at<Vec3b>((int)(currLocation.y),(int)(currLocation.x));
+                int b = color.val[0];
+                int g = color.val[1];
+                int r = color.val[2];
+                double density = 0.2126 * r +  0.7152 * g + 0.0722 * b;
+                temp1.push_back(density);
             }
             currentFeatureLocation.push_back(temp);
             pixelDensity.push_back(temp1);
@@ -241,13 +286,16 @@ void Face::firstLevelRegression(){
         // select feature
         
         // calculate the covariance of f_i and f_j
-        zero_matrix<double> covariance(featurePixelNum,featurePixelNum);
+        // zero_matrix<double> covariance(featurePixelNum,featurePixelNum);
+        Mat covariance = Mat::zeros(featurePixelNum,featurePixelNum,CV_64F);
     
         for(int j = 0;j < featurePixelNum;j++){
             for(int k = j+1;k < featurePixelNum;k++){
                 double temp = getCovariance(pixelDensity[j],pixelDensity[k]);
-                covariance(j,k) = temp;
-                covariance(k,j) = temp;
+                // covariance(j,k) = temp;
+                // covariance(k,j) = temp;
+                covariance.at<double>(j,k) = temp;
+                covariance.at<double>(k,j) = temp;
             }
         }
         secondLevelRegression(covariance,pixelDensity);    
@@ -256,7 +304,7 @@ void Face::firstLevelRegression(){
     
 }
 
-void Face::secondLevelRegression(const matrix<double>& covariance,const vector<vector<double>>& pixelDensity){
+void Face::secondLevelRegression(const Mat& covariance,const vector<vector<double> >& pixelDensity){
     for(int i = 0;i < secondLevelNum;i++){
         // select best feature
         vector<Point2i> selectedFeatureIndex;  
@@ -264,7 +312,7 @@ void Face::secondLevelRegression(const matrix<double>& covariance,const vector<v
         
         // record selected feature index 
         ofstream fout;
-        fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::append);
+        fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::app);
 
         for(int i = 0;i < selectedFeatureIndex.size();i++){
             fout<<selectedFeatureIndex[i]<<" ";
@@ -273,21 +321,21 @@ void Face::secondLevelRegression(const matrix<double>& covariance,const vector<v
         fout.close();
 
         //construct a fern using selected best features 
-        constructFern(selectedFeatureIndex); 
+        constructFern(selectedFeatureIndex,pixelDensity); 
     }   
 }
 
 void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
-        const vector<vector<double>>& pixelDensity){
+        const vector<vector<double> >& pixelDensity){
     // turn each shape into a scalar according to relative intensity of pixels
     // generate random threholds
     // divide shapes into bins based on threholds and scalars
     // for each bin, calculate its output
     
     vector<int> fernResult;
-    vector<vector<Point2d>> fernOutput;
+    vector<vector<Point2d> > fernOutput;
     int binNum = pow(2.0,featureNumInFern);
-    vector<vector<int>> bins;
+    vector<vector<int> > bins;
 
     for(int i = 0;i < binNum;i++){
         vector<int> temp;
@@ -336,7 +384,7 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
 
         for(int j = 0;j < currFernOutput.size();j++){
             double temp = 1.0/((1 + shrinkage/bins[i].size()) * bins[i].size());
-            currFernOutput[j] = temp * currFernOutput[j] 
+            currFernOutput[j] = temp * currFernOutput[j]; 
         }
 
          
@@ -346,7 +394,7 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
     }
     
     ofstream fout;
-    fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::append);
+    fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::app);
     for(int i = 0;i < fernOutput.size();i++){
         for(int j = 0;j < fernOutput[i].size();i++){
             fout<<fernOutput[i][j]<<" "; 
@@ -363,8 +411,18 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
 
 
 double Face::getCovariance(const vector<double>& v1, const vector<double>& v2){
-    double expV1 = accumulate(v1.begin(),v1.end(),0);
-    double expV2 = accumulate(v2.begin(),v2.end(),0);
+    // double expV1 = accumulate(v1.begin(),v1.end(),0);
+    // double expV2 = accumulate(v2.begin(),v2.end(),0);
+    double expV1 = 0;
+    double expV2 = 0;
+
+    for(int i = 0;i < v1.size();i++){
+        expV1 = expV1 + v1[i];
+    }
+
+    for(int i = 0;i < v2.size();i++){
+        expV2 = expV2 + v2[i];
+    }
 
     expV1 = expV1 / v1.size();
     expV2 = expV2 / v2.size();

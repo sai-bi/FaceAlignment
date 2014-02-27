@@ -3,13 +3,13 @@
  * @version 2014/02/27
  */
 
-#include "face.h"
+#include <iostream>
+#include <fstream>
 using namespace std;
 
 int main(){
-    Face training; 
-    training.run();
-    
-    return 0; 
+
 }
+
+
 

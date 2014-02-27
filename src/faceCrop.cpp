@@ -58,16 +58,16 @@ void detectAndDisplay(Mat frame,string fileName,const vector<double>& xCor, cons
         img(cropRectangle).copyTo(croppedImage);
         imwrite(fileName,croppedImage);
         
-        fout<<cropRectangle.x<<" "<<cropRectangle.y<<endl;
+        fout<<cropRectangle.x<<" "<<cropRectangle.y
+            <<" "
+            <<cropRectangle.width<<" "<<cropRectangle.height<<endl;
         for(int i = 0;i < xCor.size();i++){
-            fout<<xCor[i]<<" "<<yCor[i];
+            fout<<xCor[i] - cropRectangle.x<<" "<<yCor[i] - cropRectangle.y<<" ";
         }  
         fout<<endl;
     }catch(int e){
         validImageCount--;
     }
-
-    
 
 }
 
