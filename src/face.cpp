@@ -274,6 +274,9 @@ void Face::firstLevelRegression(){
     }
 
     for(int i = 0;i < firstLevelNum;i++){
+        cout<<endl;
+        cout<<"First level regression: "<<i<<endl;
+        cout<<endl;
         // get the feature pixel location based on currentShape             
         vector<vector<Point2d> > currentFeatureLocation;
         vector<vector<double> > pixelDensity;
