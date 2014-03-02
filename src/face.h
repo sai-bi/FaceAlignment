@@ -77,7 +77,7 @@ class Face{
 
         void  getFeaturePixelLocation(); 
         void  extractFeature(const Mat& covariance,const vector<vector<double> >& pixelDensity,
-                 vector<Point2i> selectedFeatureIndex);
+                 vector<Point2i>& selectedFeatureIndex);
 
         double  product(const vector<double>& v1, const vector<double>& v2);
         void  getDeltaShape(vector<vector<double> >& deltaShape);

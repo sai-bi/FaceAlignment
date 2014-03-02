@@ -17,6 +17,14 @@ void Face::run(){
     // calculate mean shape;
     cout<<"Get mean shape..."<<endl;
     getMeanShape();
+    
+        
+    // Mat myImage = Mat::zeros(averageHeight,averageWidth,CV_8UC3);
+    // for(int i = 0;i < meanShape.size();i++){
+        // circle(myImage,meanShape[i],2,Scalar(255,0,0),-1,8,0);  
+    // }
+    // imshow("image",myImage);        
+    // waitKey(0); 
 
     // get feature location
     cout<<"Get feature pixel locations..."<<endl;
@@ -166,7 +174,7 @@ void Face::getFeaturePixelLocation(){
 
 
 void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& pixelDensity,
-        vector<Point2i> selectedFeatureIndex){
+        vector<Point2i>& selectedFeatureIndex){
 
     vector<vector<double> > deltaShape; 
     getDeltaShape(deltaShape);
@@ -332,6 +340,7 @@ void Face::secondLevelRegression(const Mat& covariance,const vector<vector<doubl
         fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::app);
 
         for(int i = 0;i < selectedFeatureIndex.size();i++){
+            // cout<<"hello world"<<endl;
             fout<<selectedFeatureIndex[i]<<" ";
         }
         fout<<endl;
