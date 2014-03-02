@@ -175,22 +175,22 @@ void Face::getFeaturePixelLocation(){
 
 void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& pixelDensity,
         vector<Point2i>& selectedFeatureIndex){
-
+    
+    // deltaShape: difference between current shape and target shape
+    // we put x and y coordinates together in one vectors
     vector<vector<double> > deltaShape; 
     getDeltaShape(deltaShape);
+    selectedFeatureIndex.clear();
+
 
     //get a random direction
     for(int i = 0;i < featureNumInFern;i++){    
         
-        // get a random direction
+        // get a random direction, so that we can project the deltaShape to 
+        // this direction
         vector<double> randomDirection;
         getRandomDirection(randomDirection);
         
-        // cout<<endl;
-        // for(int j = 0;j < randomDirection.size();j++){
-            // cout<<randomDirection[j]<<" ";
-        // } 
-        // cout<<endl;
 
         // calculate the product
         vector<double> projectResult;
@@ -218,6 +218,8 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
         double highest = MINNUM;
         for(int j = 0;j < featurePixelNum;j++){
             for(int k = j+1;k < featurePixelNum;k++){
+
+                // selected feature index should be ignored
                 bool flag = false;
                 for(int p = 0;p < selectedFeatureIndex.size();p++){
                     if(j == selectedFeatureIndex[p].x && k == selectedFeatureIndex[p].y){
@@ -228,7 +230,6 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
                         flag = true;
                         break;
                     }
-                    
                 }
                 if(flag)
                     continue;
@@ -237,6 +238,12 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
                 double temp1 = covarianceYF[j];
                 double temp2 = covarianceYF[k];
                 double temp3 = covariance.at<double>(k,j);
+                
+                if(temp3 < 1e-10){
+                    cout<<"Denominator cannot be zero."<<endl;
+                    exit(-1); 
+                }
+
                 double temp4 = temp1 * temp2 / (sqrt(temp3));
 
                 if(abs(temp4) > highest){
@@ -264,9 +271,13 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
 }
 
 double Face::product(const vector<double>& v1, const vector<double>& v2){
+    if(v1.size() != v2.size()){
+        cout<<"Input vectors have to be of the same size."<<endl;
+        exit(-1);
+    }
+
     double result = 0;
     for(int i = 0;i < v1.size();i++){
-        // cout<<"wow "<<v1[i]<<" "<<v2[i]<<endl;
         result = result + v1[i] * v2[i]; 
     }
 
@@ -276,29 +287,32 @@ double Face::product(const vector<double>& v1, const vector<double>& v2){
 
 void Face::getDeltaShape(vector<vector<double> >& deltaShape){
     //calculate the difference between current shape and target shape
+    deltaShape.clear();
     for(int i = 0;i < currentShape.size();i++){
-        vector<double> temp;
+        vector<double> difference;
         for(int j = 0;j < currentShape[i].size();j++){
             // Point2d delta = currentShape[i][j] - targetShape[i][j];
             Point2d delta = targetShape[i][j] - currentShape[i][j]; 
-            temp.push_back(delta.x);
-            temp.push_back(delta.y);
+            difference.push_back(delta.x);
+            difference.push_back(delta.y);
         }
-        deltaShape.push_back(temp);
+        deltaShape.push_back(difference);
     }
 }
 
 void Face::getRandomDirection(vector<double>& randomDirection){
     double sum = 0;
+    // the size of randomDirection has to be 2*keypointNum, because we 
+    // have put x and y together
     for(int i = 0;i < 2 * keypointNum;i++){
-        int temp = rand()%100 + 1; 
+        int temp = rand()%1000 + 1; 
         randomDirection.push_back(temp);
         sum = sum + temp * temp;
     }
 
     sum = sqrt(sum);
     
-    // normalize it;
+    // normalize randomDirection
     for(int i = 0;i < randomDirection.size();i++){
         randomDirection[i] = randomDirection[i] / sum;  
     }
@@ -320,27 +334,43 @@ void Face::firstLevelRegression(){
         vector<vector<Point2d> > currentFeatureLocation;
         vector<vector<double> > pixelDensity;
         
+        // for each pixel selected in our feature, we have to determine their
+        // new coordinates relative to the new keypoint coordinates 
         for(int j = 0;j < featurePixelCoordinates.size();j++){
-            vector<Point2d> temp;
-            vector<double> temp1;
+            vector<Point2d> newCoordinates;
+            vector<double> newPixelDensity;
             for(int k = 0;k < currentShape.size();k++){
                 Point2d currLocation;
                 currLocation = featurePixelCoordinates[j] + currentShape[k][nearestKeypointIndex[j]];
-                temp.push_back(currLocation);
+                newCoordinates.push_back(currLocation);
+
                 // temp1.push_back(trainingImages((int)(currLocation.y),(int)(currLocation.x))); 
-                if(currLocation.y > averageHeight)
-                    currLocation.y = averageHeight;
-                if(currLocation.x > averageWidth) 
-                    currLocation.x = averageWidth;
+                // cout<<currLocation.x<<" "<<currLocation.y<<endl;
+
+                // to deal with the cases that may happen: during the regression
+                // process, the keypoint coordinates may exceed the range of the
+                // image
+                if(currLocation.y > averageHeight-1)
+                    currLocation.y = averageHeight-1;
+                if(currLocation.x > averageWidth-1) 
+                    currLocation.x = averageWidth-1;
+                if(currLocation.y < 0)
+                    currLocation.y = 0;
+                if(currLocation.x < 0)
+                    currLocation.x = 0;
+
+
                 Vec3b color = faceImages[k].at<Vec3b>((int)(currLocation.y),(int)(currLocation.x));
                 int b = color.val[0];
                 int g = color.val[1];
                 int r = color.val[2];
+
+                // change to grayscale
                 double density = 0.2126 * r +  0.7152 * g + 0.0722 * b;
-                temp1.push_back(density);
+                newPixelDensity.push_back(density);
             }
-            currentFeatureLocation.push_back(temp);
-            pixelDensity.push_back(temp1);
+            currentFeatureLocation.push_back(newCoordinates);
+            pixelDensity.push_back(newPixelDensity);
         }     
     
         // select feature
@@ -349,8 +379,8 @@ void Face::firstLevelRegression(){
         // zero_matrix<double> covariance(featurePixelNum,featurePixelNum);
         Mat covariance = Mat::zeros(featurePixelNum,featurePixelNum,CV_64F);
     
-        for(int j = 0;j < featurePixelNum;j++){
-            for(int k = j+1;k < featurePixelNum;k++){
+        for(int j = 0;j < pixelDensity.size();j++){
+            for(int k = j+1;k < pixelDensity.size();k++){
                 double temp = getCovariance(pixelDensity[j],pixelDensity[k]);
                 // covariance(j,k) = temp;
                 // covariance(k,j) = temp;
@@ -368,23 +398,23 @@ void Face::firstLevelRegression(){
 void Face::secondLevelRegression(const Mat& covariance,const vector<vector<double> >& pixelDensity){
     for(int i = 0;i < secondLevelNum;i++){
         // select best feature
+        // selectedFeatureIndex records the feture pairs we select, 
         vector<Point2i> selectedFeatureIndex;  
-        cout<<"extractFeature"<<endl;
+        // cout<<"extractFeature"<<endl;
         extractFeature(covariance,pixelDensity,selectedFeatureIndex); 
         
         // record selected feature index 
         ofstream fout;
         fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::app);
 
-        for(int i = 0;i < selectedFeatureIndex.size();i++){
-            // cout<<"hello world"<<endl;
-            fout<<selectedFeatureIndex[i].x<<" "<< selectedFeatureIndex[i].y<<" ";
+        for(int j = 0;j < selectedFeatureIndex.size();j++){
+            fout<<selectedFeatureIndex[j].x<<" "<< selectedFeatureIndex[j].y<<" ";
         }
         fout<<endl;
         fout.close();
 
         //construct a fern using selected best features 
-        cout<<"construct fern"<<endl;
+        // cout<<"construct fern"<<endl;
         constructFern(selectedFeatureIndex,pixelDensity); 
     }   
 }
@@ -396,38 +426,50 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
     // divide shapes into bins based on threholds and scalars
     // for each bin, calculate its output
     
+
+    // fern result records the bins the image is in
     vector<int> fernResult;
+    
+    // each fern corresponds to an output, that is, the amount of incremental of
+    // shapes
     vector<vector<Point2d> > fernOutput;
     int binNum = pow(2.0,featureNumInFern);
+
+    // bins record the index of each training faces that belong to this bin
     vector<vector<int> > bins;
 
+    // initialzie
     for(int i = 0;i < binNum;i++){
         vector<int> temp;
         bins.push_back(temp);
     }
-    cout<<"wow1 "<<endl;
+    
     for(int i = 0;i < currentShape.size();i++){
         int tempResult = 0;
         for(int j = 0;j < selectedFeatureIndex.size();j++){
+
             double density1 = pixelDensity[selectedFeatureIndex[j].x][i];
             double density2 = pixelDensity[selectedFeatureIndex[j].y][i];
 
-            // binary number
+            // binary number: 0 or 1
+            // turn binary number into an integer
             if(density1 > density2){
-                tempResult = tempResult + 2 ^ j; 
+                tempResult = tempResult + int(pow(2.0,j)); 
             }
         }
         fernResult.push_back(tempResult);
         bins[tempResult].push_back(i); 
     }
 
-    cout<<"wow2 "<<endl;
     // get random threhold, the number of bins is 2^featureNumInFern; 
+    // here I haven't used random threhold
     
     // get output
     for(int i = 0;i < bins.size();i++){
         vector<Point2d> currFernOutput;
-
+        currFernOutput.clear();
+        
+        // if no training face in this bin, output zero
         if(bins[i].size() == 0){
             for(int j = 0;j < keypointNum;j++){
                 currFernOutput.push_back(Point2d(0,0));
@@ -438,7 +480,6 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
          
         for(int j = 0;j < bins[i].size();j++){
             int shapeIndex = bins[i][j];
-            cout<<shapeIndex<<endl;
             if(j == 0){
                 currFernOutput = vectorMinus(targetShape[shapeIndex], currentShape[shapeIndex]);
             }
@@ -456,6 +497,7 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
         fernOutput.push_back(currFernOutput);
     }
     
+    // record the fern output 
     ofstream fout;
     fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::app);
     for(int i = 0;i < fernOutput.size();i++){
@@ -464,12 +506,15 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
         }
         fout<<endl;
     }
-    cout<<"wow3 "<<endl;
     
-    // update current shape
+    // update current shape, add the corresponding fern output
     for(int i = 0;i < currentShape.size();i++){
         int binIndex = fernResult[i];
         currentShape[i] = vectorPlus(currentShape[i],fernOutput[binIndex]);
+        
+        // there exists cases that after update, the new keypoint coordinates
+        // exceed the range of image, I am not quite sure about how to deal with
+        // this image  
         for(int j = 0;j < currentShape[i].size();j++){
             if(currentShape[i][j].x > averageWidth-1){
                 cout<<"Extend..."<<endl;
@@ -478,7 +523,13 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
             if(currentShape[i][j].y > averageHeight-1){
                 cout<<"Extend..."<<endl;
                 currentShape[i][j].y = averageHeight-1;
+            }
+            if(currentShape[i][j].x < 0){
+                currentShape[i][j] = 0;
             } 
+            if(currentShape[i][j].y < 0){
+                currentShape[i][j].y = 0;
+            }
         } 
     }
 }
@@ -487,6 +538,11 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
 double Face::getCovariance(const vector<double>& v1, const vector<double>& v2){
     // double expV1 = accumulate(v1.begin(),v1.end(),0);
     // double expV2 = accumulate(v2.begin(),v2.end(),0);
+    if(v1.size() != v2.size()){
+        cout<<"Input vectors have to be of equal size."<<endl;
+        exit(-1);
+    }
+
     double expV1 = 0;
     double expV2 = 0;
 
@@ -509,22 +565,28 @@ double Face::getCovariance(const vector<double>& v1, const vector<double>& v2){
 }
 
 vector<Point2d> Face::vectorMinus(const vector<Point2d>& shape1, const vector<Point2d>& shape2){
+    if(shape1.size() != shape2.size()){
+        cout<<"Input vectors have to be of the same size."<<endl;
+        exit(-1);
+    }
+
     vector<Point2d> result;
-    cout<<"plus1"<<endl;
     for(int i = 0;i < shape1.size();i++){
         result.push_back(shape1[i] - shape2[i]);
     }
-    cout<<"plus2"<<endl;
     return result;
 }
 
 vector<Point2d> Face::vectorPlus(const vector<Point2d>& shape1, const vector<Point2d>& shape2){
+    if(shape1.size() != shape2.size()){
+        cout<<"Input vectors have to be of the same size."<<endl;
+        exit(-1);
+    }
+    
     vector<Point2d> result;
-    cout<<"plus3"<<endl;
     for(int i = 0;i < shape1.size();i++){
         result.push_back(shape1[i] + shape2[i]);
     }
-    cout<<"plus4"<<endl;
     return result;
 }
 
