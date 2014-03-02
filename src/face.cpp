@@ -55,6 +55,7 @@ void Face::readParameters(){
 
 
 Face::Face(){
+    srand(time(NULL));
     averageHeight = 0;
     averageWidth = 0;    
 }
@@ -150,7 +151,6 @@ void Face::getFeaturePixelLocation(){
         allIndex.push_back(i); 
     }    
     
-    srand(time(NULL));
 
     random_shuffle(allIndex.begin(),allIndex.end());
 
@@ -185,34 +185,63 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
         // get a random direction
         vector<double> randomDirection;
         getRandomDirection(randomDirection);
+        
+        // cout<<endl;
+        // for(int j = 0;j < randomDirection.size();j++){
+            // cout<<randomDirection[j]<<" ";
+        // } 
+        // cout<<endl;
 
         // calculate the product
         vector<double> projectResult;
         for(int j = 0;j < deltaShape.size();j++){
-            projectResult.push_back(product(deltaShape[i],randomDirection));
+            double temp = product(deltaShape[j],randomDirection);
+            // cout<<"Product result:"<<temp<<endl;
+            projectResult.push_back(temp);
         }
         
         // calculate cov(y,f_i)
         vector<double> covarianceYF;
         for(int j = 0;j < pixelDensity.size();j++){
-            covarianceYF.push_back(getCovariance(projectResult,pixelDensity[j]));      
+            double temp = getCovariance(projectResult,pixelDensity[j]);
+            // covarianceYF.push_back(getCovariance(projectResult,pixelDensity[j]));      
+            // cout<<temp<<" ";
+            covarianceYF.push_back(temp);
         }
         
         // get the pair with highest correlation corr(y,fi - fj);  
         // zero_matrix<double> correlation;
-        double stdY = sqrt(getCovariance(projectResult,projectResult)); 
-        
-        double selectedIndex1;
-        double selectedIndex2;
+        // double stdY = sqrt(getCovariance(projectResult,projectResult)); 
+        // cout<<stdY<<endl; 
+        int selectedIndex1 = 0;
+        int selectedIndex2 = 0;
         double highest = MINNUM;
         for(int j = 0;j < featurePixelNum;j++){
             for(int k = j+1;k < featurePixelNum;k++){
+                bool flag = false;
+                for(int p = 0;p < selectedFeatureIndex.size();p++){
+                    if(j == selectedFeatureIndex[p].x && k == selectedFeatureIndex[p].y){
+                        flag = true;
+                        break;
+                    }
+                    if(k == selectedFeatureIndex[p].x && j == selectedFeatureIndex[p].y){
+                        flag = true;
+                        break;
+                    }
+                    
+                }
+                if(flag)
+                    continue;
+
+
                 double temp1 = covarianceYF[j];
                 double temp2 = covarianceYF[k];
                 double temp3 = covariance.at<double>(k,j);
-                double temp4 = temp1 * temp2 / (sqrt(temp3) * stdY);
+                double temp4 = temp1 * temp2 / (sqrt(temp3));
 
                 if(abs(temp4) > highest){
+                    highest = abs(temp4);
+                    // cout<<highest<<endl;
                     if(temp4 > 0){
                         selectedIndex1 = j;
                         selectedIndex2 = k;
@@ -225,6 +254,8 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
             }
         }
 
+        // cout<<selectedIndex1<<" "<<selectedIndex2<<endl;
+
         selectedFeatureIndex.push_back(Point2i(selectedIndex1,selectedIndex2));
     } 
 
@@ -235,6 +266,7 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
 double Face::product(const vector<double>& v1, const vector<double>& v2){
     double result = 0;
     for(int i = 0;i < v1.size();i++){
+        // cout<<"wow "<<v1[i]<<" "<<v2[i]<<endl;
         result = result + v1[i] * v2[i]; 
     }
 
@@ -247,8 +279,8 @@ void Face::getDeltaShape(vector<vector<double> >& deltaShape){
     for(int i = 0;i < currentShape.size();i++){
         vector<double> temp;
         for(int j = 0;j < currentShape[i].size();j++){
-            // temp.push_back(currentShape[i][j] - targetShape[i][j]); 
-            Point2d delta = currentShape[i][j] - targetShape[i][j];
+            // Point2d delta = currentShape[i][j] - targetShape[i][j];
+            Point2d delta = targetShape[i][j] - currentShape[i][j]; 
             temp.push_back(delta.x);
             temp.push_back(delta.y);
         }
@@ -257,7 +289,6 @@ void Face::getDeltaShape(vector<vector<double> >& deltaShape){
 }
 
 void Face::getRandomDirection(vector<double>& randomDirection){
-    srand(time(NULL));
     double sum = 0;
     for(int i = 0;i < 2 * keypointNum;i++){
         int temp = rand()%100 + 1; 
@@ -323,6 +354,7 @@ void Face::firstLevelRegression(){
                 covariance.at<double>(k,j) = temp;
             }
         }
+        // cout<<covariance<<endl;
         secondLevelRegression(covariance,pixelDensity);    
     }
 
@@ -341,7 +373,7 @@ void Face::secondLevelRegression(const Mat& covariance,const vector<vector<doubl
 
         for(int i = 0;i < selectedFeatureIndex.size();i++){
             // cout<<"hello world"<<endl;
-            fout<<selectedFeatureIndex[i]<<" ";
+            fout<<selectedFeatureIndex[i].x<<" "<< selectedFeatureIndex[i].y<<" ";
         }
         fout<<endl;
         fout.close();
