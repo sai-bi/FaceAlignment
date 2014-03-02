@@ -328,6 +328,10 @@ void Face::firstLevelRegression(){
                 currLocation = featurePixelCoordinates[j] + currentShape[k][nearestKeypointIndex[j]];
                 temp.push_back(currLocation);
                 // temp1.push_back(trainingImages((int)(currLocation.y),(int)(currLocation.x))); 
+                if(currLocation.y > averageHeight)
+                    currLocation.y = averageHeight;
+                if(currLocation.x > averageWidth) 
+                    currLocation.x = averageWidth;
                 Vec3b color = faceImages[k].at<Vec3b>((int)(currLocation.y),(int)(currLocation.x));
                 int b = color.val[0];
                 int g = color.val[1];
@@ -365,6 +369,7 @@ void Face::secondLevelRegression(const Mat& covariance,const vector<vector<doubl
     for(int i = 0;i < secondLevelNum;i++){
         // select best feature
         vector<Point2i> selectedFeatureIndex;  
+        cout<<"extractFeature"<<endl;
         extractFeature(covariance,pixelDensity,selectedFeatureIndex); 
         
         // record selected feature index 
@@ -379,6 +384,7 @@ void Face::secondLevelRegression(const Mat& covariance,const vector<vector<doubl
         fout.close();
 
         //construct a fern using selected best features 
+        cout<<"construct fern"<<endl;
         constructFern(selectedFeatureIndex,pixelDensity); 
     }   
 }
@@ -399,7 +405,7 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
         vector<int> temp;
         bins.push_back(temp);
     }
-
+    cout<<"wow1 "<<endl;
     for(int i = 0;i < currentShape.size();i++){
         int tempResult = 0;
         for(int j = 0;j < selectedFeatureIndex.size();j++){
@@ -415,6 +421,7 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
         bins[tempResult].push_back(i); 
     }
 
+    cout<<"wow2 "<<endl;
     // get random threhold, the number of bins is 2^featureNumInFern; 
     
     // get output
@@ -428,9 +435,10 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
             fernOutput.push_back(currFernOutput);
             continue;
         }
-        
+         
         for(int j = 0;j < bins[i].size();j++){
             int shapeIndex = bins[i][j];
+            cout<<shapeIndex<<endl;
             if(j == 0){
                 currFernOutput = vectorMinus(targetShape[shapeIndex], currentShape[shapeIndex]);
             }
@@ -445,25 +453,33 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
             currFernOutput[j] = temp * currFernOutput[j]; 
         }
 
-         
-
-
         fernOutput.push_back(currFernOutput);
     }
     
     ofstream fout;
     fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::app);
     for(int i = 0;i < fernOutput.size();i++){
-        for(int j = 0;j < fernOutput[i].size();i++){
+        for(int j = 0;j < fernOutput[i].size();j++){
             fout<<fernOutput[i][j]<<" "; 
         }
         fout<<endl;
     }
+    cout<<"wow3 "<<endl;
     
     // update current shape
     for(int i = 0;i < currentShape.size();i++){
         int binIndex = fernResult[i];
-        currentShape[i] = vectorPlus(currentShape[i],fernOutput[binIndex]); 
+        currentShape[i] = vectorPlus(currentShape[i],fernOutput[binIndex]);
+        for(int j = 0;j < currentShape[i].size();j++){
+            if(currentShape[i][j].x > averageWidth-1){
+                cout<<"Extend..."<<endl;
+                currentShape[i][j].x = averageWidth-1;
+            }
+            if(currentShape[i][j].y > averageHeight-1){
+                cout<<"Extend..."<<endl;
+                currentShape[i][j].y = averageHeight-1;
+            } 
+        } 
     }
 }
 
@@ -494,21 +510,21 @@ double Face::getCovariance(const vector<double>& v1, const vector<double>& v2){
 
 vector<Point2d> Face::vectorMinus(const vector<Point2d>& shape1, const vector<Point2d>& shape2){
     vector<Point2d> result;
-
+    cout<<"plus1"<<endl;
     for(int i = 0;i < shape1.size();i++){
         result.push_back(shape1[i] - shape2[i]);
     }
-
+    cout<<"plus2"<<endl;
     return result;
 }
 
 vector<Point2d> Face::vectorPlus(const vector<Point2d>& shape1, const vector<Point2d>& shape2){
     vector<Point2d> result;
-
+    cout<<"plus3"<<endl;
     for(int i = 0;i < shape1.size();i++){
         result.push_back(shape1[i] + shape2[i]);
     }
-
+    cout<<"plus4"<<endl;
     return result;
 }
 
