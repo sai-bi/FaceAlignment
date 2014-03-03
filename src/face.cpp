@@ -625,20 +625,21 @@ void Face::faceTest(){
     }
 
     vector<Point2d> testCurrentShape = meanShape;  
-
     for(int i = 0;i < firstLevelNum;i++){
+        cout<<"Level: "<<i<<endl;
         secondLevelTest(i,testCurrentShape,inputPixelCoordinates, inputNearestIndex, testImg);
     }
 
     for(int i = 0;i < testCurrentShape.size();i++){
         circle(testImg,testCurrentShape[i],3,Scalar(255,0,0), -1, 8,0); 
     }
-
+    
+    imshow("img",testImg);
     waitKey(0);
 }
 
 void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape, 
-        const vector<Point2d> inputPixelCoordinates,const vector<int>& inputNearestIndex,
+        const vector<Point2d>& inputPixelCoordinates,const vector<int>& inputNearestIndex,
         const Mat& testImg){
     ifstream fin;
     string fileName = "./trainingoutput/" + to_string(currLevelNum) + ".txt"; 
@@ -648,7 +649,11 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
 
     for(int i = 0;i < inputPixelCoordinates.size();i++){
         Point2d temp;
-        temp = inputPixelCoordinates[i] + testCurrentShape[nearestKeypointIndex[i]];    
+        // cout<<"hello1"<<endl;
+        // cout<<inputPixelCoordinates.size()<<endl;
+        // cout<<inputNearestIndex[i]<<endl;
+        temp = inputPixelCoordinates[i] + testCurrentShape[inputNearestIndex[i]];    
+        // cout<<"hello2"<<endl;
         if(temp.y > averageHeight-1)
             temp.y = averageHeight-1;
         if(temp.x > averageWidth-1) 
@@ -672,7 +677,7 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
         for(int j = 0;j < featureNumInFern;j++){
             double x = 0;
             double y = 0;
-            cin>>x>>y;
+            fin>>x>>y;
             selectedFeatureIndex.push_back(Point2i(x,y));   
         } 
         int binNum = pow(2.0, featureNumInFern);
@@ -683,7 +688,7 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
                 double x = 0;
                 double y = 0;
                 char temp;
-                cin>>temp>>x>>temp>>y>>temp;
+                fin>>temp>>x>>temp>>y>>temp;
                 currFernOutput.push_back(Point2d(x,y)); 
             } 
             fernOutput.push_back(currFernOutput); 
@@ -716,6 +721,7 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
             }
         }
     }
+    fin.close();
 
 }
 
