@@ -167,7 +167,7 @@ void Face::getFeaturePixelLocation(){
     } 
 
     ofstream fout;
-    fout.open("./trainingouput/featurePixelCoordinates.txt"); 
+    fout.open("./trainingoutput/featurePixelCoordinates.txt"); 
     for(int i = 0;i < featurePixelCoordinates.size();i++){
         fout<<featurePixelCoordinates[i]<<" "; 
     }
@@ -339,7 +339,7 @@ void Face::firstLevelRegression(){
         cout<<"First level regression: "<<i<<endl;
         cout<<endl;
 
-        currentFileName = "./trainingouput/" + to_string(i) + ".txt";
+        currentFileName = "./trainingoutput/" + to_string(i) + ".txt";
 
         // get the feature pixel location based on currentShape             
         vector<vector<Point2d> > currentFeatureLocation;
@@ -603,10 +603,11 @@ vector<Point2d> Face::vectorPlus(const vector<Point2d>& shape1, const vector<Poi
 
 void Face::faceTest(){
     ifstream fin;
-    fin.open("./trainingouput/featurePixelCoordinates.txt");
+    fin.open("./trainingoutput/featurePixelCoordinates.txt");
 
     string testImageName = "test.jpg";
     Mat testImg = imread(testImageName.c_str());    
+    resize(testImg,testImg,Size(averageWidth,averageHeight)); 
 
     vector<Point2d> inputPixelCoordinates;
     vector<int> inputNearestIndex;
@@ -628,13 +629,19 @@ void Face::faceTest(){
     for(int i = 0;i < firstLevelNum;i++){
         secondLevelTest(i,testCurrentShape,inputPixelCoordinates, inputNearestIndex, testImg);
     }
+
+    for(int i = 0;i < testCurrentShape.size();i++){
+        circle(testImg,testCurrentShape[i],3,Scalar(255,0,0), -1, 8,0); 
+    }
+
+    waitKey(0);
 }
 
 void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape, 
-        const vector<Point2d> inputPixelCoordinates,const vector<Point2d>& inputNearestIndex,
+        const vector<Point2d> inputPixelCoordinates,const vector<int>& inputNearestIndex,
         const Mat& testImg){
     ifstream fin;
-    string fileName = "./trainingouput/" + to_string(currLevelNum) + ".txt"; 
+    string fileName = "./trainingoutput/" + to_string(currLevelNum) + ".txt"; 
     fin.open(fileName);
 
     vector<double> pixelDensity;
@@ -693,19 +700,19 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
         testCurrentShape = vectorPlus(testCurrentShape, fernOutput[binIndex]);  
 
         for(int j = 0;j < testCurrentShape.size();j++){
-            if(testCurrentShape[i][j].x > averageWidth-1){
+            if(testCurrentShape[j].x > averageWidth-1){
                 // cout<<"Extend..."<<endl;
-                testCurrentShape[i][j].x = averageWidth-1;
+                testCurrentShape[j].x = averageWidth-1;
             }
-            if(testCurrentShape[i][j].y > averageHeight-1){
+            if(testCurrentShape[j].y > averageHeight-1){
                 // cout<<"Extend..."<<endl;
-                testCurrentShape[i][j].y = averageHeight-1;
+                testCurrentShape[j].y = averageHeight-1;
             }
-            if(testCurrentShape[i][j].x < 0){
-                testCurrentShape[i][j].x = 0;
+            if(testCurrentShape[j].x < 0){
+                testCurrentShape[j].x = 0;
             } 
-            if(testCurrentShape[i][j].y < 0){
-                testCurrentShape[i][j].y = 0;
+            if(testCurrentShape[j].y < 0){
+                testCurrentShape[j].y = 0;
             }
         }
     }

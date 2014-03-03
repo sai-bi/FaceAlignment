@@ -98,7 +98,9 @@ class Face{
 
         // read parameters from parameters.ini
         void readParameters();
-
+        void secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape, 
+            const vector<Point2d> inputPixelCoordinates,const vector<int>& inputNearestIndex,
+            const Mat& testImg);
 };
 
 #endif
