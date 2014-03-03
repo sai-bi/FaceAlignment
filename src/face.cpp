@@ -605,8 +605,11 @@ void Face::faceTest(){
     ifstream fin;
     fin.open("./trainingoutput/featurePixelCoordinates.txt");
 
-    string testImageName = "test.jpg";
-    Mat testImg = imread(testImageName.c_str());    
+    // string testImageName = "test.jpg";
+    // Mat testImg = imread(testImageName.c_str());    
+    int testIndex = 5;
+    Mat testImg = faceImages[testIndex];
+
     resize(testImg,testImg,Size(averageWidth,averageHeight)); 
 
     vector<Point2d> inputPixelCoordinates;
@@ -623,6 +626,7 @@ void Face::faceTest(){
         fin>>x;
         inputNearestIndex.push_back(int(x)); 
     }
+    
 
     vector<Point2d> testCurrentShape = meanShape;  
     for(int i = 0;i < firstLevelNum;i++){
@@ -630,11 +634,24 @@ void Face::faceTest(){
         secondLevelTest(i,testCurrentShape,inputPixelCoordinates, inputNearestIndex, testImg);
     }
 
+    Mat testImg1 = testImg.clone();
+    for(int i = 0;i < meanShape.size();i++){
+        circle(testImg1,meanShape[i],3,Scalar(0,0,255),-1,8,0);
+    }
+    imshow("initial",testImg1);
+    
+    Mat testImg2 = testImg.clone();
+    
+    for(int i = 0;i < targetShape[testIndex].size();i++){
+        circle(testImg2,targetShape[testIndex][i],3,Scalar(0,0,255),-1,8,0);
+    }
+    imshow("target",testImg2); 
+
     for(int i = 0;i < testCurrentShape.size();i++){
         circle(testImg,testCurrentShape[i],3,Scalar(255,0,0), -1, 8,0); 
     }
-    
-    imshow("img",testImg);
+
+    imshow("output",testImg);
     waitKey(0);
 }
 
@@ -649,11 +666,7 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
 
     for(int i = 0;i < inputPixelCoordinates.size();i++){
         Point2d temp;
-        // cout<<"hello1"<<endl;
-        // cout<<inputPixelCoordinates.size()<<endl;
-        // cout<<inputNearestIndex[i]<<endl;
         temp = inputPixelCoordinates[i] + testCurrentShape[inputNearestIndex[i]];    
-        // cout<<"hello2"<<endl;
         if(temp.y > averageHeight-1)
             temp.y = averageHeight-1;
         if(temp.x > averageWidth-1) 
@@ -689,6 +702,7 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
                 double y = 0;
                 char temp;
                 fin>>temp>>x>>temp>>y>>temp;
+                // cout<<x<<" "<<y<<endl;
                 currFernOutput.push_back(Point2d(x,y)); 
             } 
             fernOutput.push_back(currFernOutput); 
@@ -702,7 +716,14 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
                 binIndex = binIndex + (int)(pow(2.0,j)); 
             }  
         }
+        
+        // Mat tempImg = testImg.clone();
         testCurrentShape = vectorPlus(testCurrentShape, fernOutput[binIndex]);  
+        // for(int i = 0;i < testCurrentShape.size();i++){
+            // circle(tempImg,testCurrentShape[i],3,Scalar(255,0,0), -1, 8,0); 
+        // }
+        // imshow("test",tempImg);
+        // waitKey(1);
 
         for(int j = 0;j < testCurrentShape.size();j++){
             if(testCurrentShape[j].x > averageWidth-1){
