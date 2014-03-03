@@ -18,28 +18,25 @@ void Face::run(){
     cout<<"Get mean shape..."<<endl;
     getMeanShape();
     
-        
-    // Mat myImage = Mat::zeros(averageHeight,averageWidth,CV_8UC3);
-    // for(int i = 0;i < meanShape.size();i++){
-        // circle(myImage,meanShape[i],2,Scalar(255,0,0),-1,8,0);  
-    // }
-    // imshow("image",myImage);        
-    // waitKey(0); 
+    // PROGRAM MODE: 0 for training, 1 for testing
+    if(mode == 0){
+        // get feature location
+        cout<<"Get feature pixel locations..."<<endl;
+        getFeaturePixelLocation();
 
-    // get feature location
-    cout<<"Get feature pixel locations..."<<endl;
-    getFeaturePixelLocation();
-
-    // regression
-    cout<<"First level regression..."<<endl;
-    firstLevelRegression();
-
+        // regression
+        cout<<"First level regression..."<<endl;
+        firstLevelRegression();
+    }
+    else if(mode == 1){
+        faceTest();
+    }
 }
 
 void Face::readParameters(){
     boost::property_tree::ptree pt;
     boost::property_tree::ini_parser::read_ini("./parameters.ini",pt);
-    
+
     imgNum = pt.get<int>("Training.imgNum");
     featurePixelNum = pt.get<int>("Training.featurePixelNum");
     firstLevelNum = pt.get<int>("Training.firstLevelNum");
@@ -48,9 +45,7 @@ void Face::readParameters(){
     featureNumInFern = pt.get<int>("Training.featureNumInFern");
     shrinkage = pt.get<int>("Training.shrinkage");
     debug = pt.get<int>("Training.debug");
-
-    // cout<<"Shrinkage:"<<shrinkage<<endl;
-
+    mode = pt.get<int>("Training.mode");
 }
 
 
@@ -63,12 +58,12 @@ Face::Face(){
 void Face::readData(){
     ifstream fin;
     fin.open("./../data/LFPW/keypointsInfor.txt");
-    
+
     double imageX;
     double imageY;
     double x;
     double y;
-    
+
     // read image info
     while(fin>>imageX>>imageY>>x>>y){
         imageStartCor.push_back(Point2d(imageX,imageY));
@@ -78,10 +73,10 @@ void Face::readData(){
             fin>>x>>y;
             keypoint.push_back(Point2d(x,y));
         }
-        
+
         targetShape.push_back(keypoint);
     }
-    
+
     fin.close();
 
     // read all image
@@ -99,20 +94,20 @@ void Face::getMeanShape(){
     // first scale all images to the same size
     // change the keypoints coordinates 
     // average all keypoints in the same position
-    
+
     //get average size
     for(int i = 0;i < imgSize.size();i++){
         averageWidth += imgSize[i].x;
         averageHeight += imgSize[i].y;  
     }    
-    
+
     averageWidth = averageWidth / imgSize.size();
     averageHeight = averageHeight / imgSize.size();
 
     if(debug){
         cout<<"Average width and height "<<averageWidth<<" "<<averageHeight<<endl;
     }
-    
+
     // scale all images
     for(int i = 0;i < faceImages.size();i++){
         resize(faceImages[i],faceImages[i],Size(averageWidth,averageHeight)); 
@@ -128,12 +123,12 @@ void Face::getMeanShape(){
             double y = targetShape[i][j].y * averageHeight / imgSize[i].y;  
             targetShape[i][j].x = x;
             targetShape[i][j].y = y;  
-            
+
             meanShape[j].x += x;
             meanShape[j].y += y;
         }
     } 
-   
+
     // get the mean shape  
     for(int i = 0;i < meanShape.size();i++){
         meanShape[i].x = meanShape[i].x / targetShape.size();
@@ -144,20 +139,20 @@ void Face::getMeanShape(){
 void Face::getFeaturePixelLocation(){
     // sample a number of pixels from the face images
     // get their coordinates related to the nearest face keypoints
-    
+
     // random face pixels selected
     vector<int> allIndex;
     for(int i = 0;i < averageHeight * averageWidth;i++){
         allIndex.push_back(i); 
     }    
-    
+
 
     random_shuffle(allIndex.begin(),allIndex.end());
 
     for(int i = 0;i < featurePixelNum;i++){
         int x = allIndex[i] % averageWidth;
         int y = allIndex[i] / averageWidth;
-        
+
         double dist = MAXNUM;
         int minIndex = 0;
         for(int j=0;j < meanShape.size();j++){
@@ -169,13 +164,26 @@ void Face::getFeaturePixelLocation(){
         } 
         featurePixelCoordinates.push_back(Point2d(x,y) - meanShape[minIndex]);
         nearestKeypointIndex.push_back(minIndex);
-    }  
+    } 
+
+    ofstream fout;
+    fout.open("./trainingouput/featurePixelCoordinates.txt"); 
+    for(int i = 0;i < featurePixelCoordinates.size();i++){
+        fout<<featurePixelCoordinates[i]<<" "; 
+    }
+    fout<<endl;
+
+    for(int i = 0;i < nearestKeypointIndex.size();i++){
+        fout<<nearestKeypointIndex[i]<<" ";
+    }
+    fout<<endl;
+    fout.close();
 }
 
 
 void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& pixelDensity,
         vector<Point2i>& selectedFeatureIndex){
-    
+
     // deltaShape: difference between current shape and target shape
     // we put x and y coordinates together in one vectors
     vector<vector<double> > deltaShape; 
@@ -185,12 +193,12 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
 
     //get a random direction
     for(int i = 0;i < featureNumInFern;i++){    
-        
+
         // get a random direction, so that we can project the deltaShape to 
         // this direction
         vector<double> randomDirection;
         getRandomDirection(randomDirection);
-        
+
 
         // calculate the product
         vector<double> projectResult;
@@ -199,7 +207,7 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
             // cout<<"Product result:"<<temp<<endl;
             projectResult.push_back(temp);
         }
-        
+
         // calculate cov(y,f_i)
         vector<double> covarianceYF;
         for(int j = 0;j < pixelDensity.size();j++){
@@ -208,7 +216,7 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
             // cout<<temp<<" ";
             covarianceYF.push_back(temp);
         }
-        
+
         // get the pair with highest correlation corr(y,fi - fj);  
         // zero_matrix<double> correlation;
         // double stdY = sqrt(getCovariance(projectResult,projectResult)); 
@@ -238,8 +246,9 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
                 double temp1 = covarianceYF[j];
                 double temp2 = covarianceYF[k];
                 double temp3 = covariance.at<double>(k,j);
-                
-                if(temp3 < 1e-10){
+
+                if(abs(temp3) < 1e-20){
+                    cout<<temp3<<endl;
                     cout<<"Denominator cannot be zero."<<endl;
                     exit(-1); 
                 }
@@ -248,7 +257,6 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
 
                 if(abs(temp4) > highest){
                     highest = abs(temp4);
-                    // cout<<highest<<endl;
                     if(temp4 > 0){
                         selectedIndex1 = j;
                         selectedIndex2 = k;
@@ -266,7 +274,7 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
         selectedFeatureIndex.push_back(Point2i(selectedIndex1,selectedIndex2));
     } 
 
-    
+
 
 }
 
@@ -311,7 +319,7 @@ void Face::getRandomDirection(vector<double>& randomDirection){
     }
 
     sum = sqrt(sum);
-    
+
     // normalize randomDirection
     for(int i = 0;i < randomDirection.size();i++){
         randomDirection[i] = randomDirection[i] / sum;  
@@ -330,10 +338,13 @@ void Face::firstLevelRegression(){
         cout<<endl;
         cout<<"First level regression: "<<i<<endl;
         cout<<endl;
+
+        currentFileName = "./trainingouput/" + to_string(i) + ".txt";
+
         // get the feature pixel location based on currentShape             
         vector<vector<Point2d> > currentFeatureLocation;
         vector<vector<double> > pixelDensity;
-        
+
         // for each pixel selected in our feature, we have to determine their
         // new coordinates relative to the new keypoint coordinates 
         for(int j = 0;j < featurePixelCoordinates.size();j++){
@@ -372,13 +383,13 @@ void Face::firstLevelRegression(){
             currentFeatureLocation.push_back(newCoordinates);
             pixelDensity.push_back(newPixelDensity);
         }     
-    
+
         // select feature
-        
+
         // calculate the covariance of f_i and f_j
         // zero_matrix<double> covariance(featurePixelNum,featurePixelNum);
         Mat covariance = Mat::zeros(featurePixelNum,featurePixelNum,CV_64F);
-    
+
         for(int j = 0;j < pixelDensity.size();j++){
             for(int k = j+1;k < pixelDensity.size();k++){
                 double temp = getCovariance(pixelDensity[j],pixelDensity[k]);
@@ -388,11 +399,10 @@ void Face::firstLevelRegression(){
                 covariance.at<double>(k,j) = temp;
             }
         }
-        // cout<<covariance<<endl;
         secondLevelRegression(covariance,pixelDensity);    
     }
 
-    
+
 }
 
 void Face::secondLevelRegression(const Mat& covariance,const vector<vector<double> >& pixelDensity){
@@ -402,10 +412,10 @@ void Face::secondLevelRegression(const Mat& covariance,const vector<vector<doubl
         vector<Point2i> selectedFeatureIndex;  
         // cout<<"extractFeature"<<endl;
         extractFeature(covariance,pixelDensity,selectedFeatureIndex); 
-        
+
         // record selected feature index 
         ofstream fout;
-        fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::app);
+        fout.open(currentFileName,std::ofstream::out|std::ofstream::app);
 
         for(int j = 0;j < selectedFeatureIndex.size();j++){
             fout<<selectedFeatureIndex[j].x<<" "<< selectedFeatureIndex[j].y<<" ";
@@ -425,11 +435,11 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
     // generate random threholds
     // divide shapes into bins based on threholds and scalars
     // for each bin, calculate its output
-    
+
 
     // fern result records the bins the image is in
     vector<int> fernResult;
-    
+
     // each fern corresponds to an output, that is, the amount of incremental of
     // shapes
     vector<vector<Point2d> > fernOutput;
@@ -443,7 +453,7 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
         vector<int> temp;
         bins.push_back(temp);
     }
-    
+
     for(int i = 0;i < currentShape.size();i++){
         int tempResult = 0;
         for(int j = 0;j < selectedFeatureIndex.size();j++){
@@ -463,12 +473,12 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
 
     // get random threhold, the number of bins is 2^featureNumInFern; 
     // here I haven't used random threhold
-    
+
     // get output
     for(int i = 0;i < bins.size();i++){
         vector<Point2d> currFernOutput;
         currFernOutput.clear();
-        
+
         // if no training face in this bin, output zero
         if(bins[i].size() == 0){
             for(int j = 0;j < keypointNum;j++){
@@ -477,7 +487,7 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
             fernOutput.push_back(currFernOutput);
             continue;
         }
-         
+
         for(int j = 0;j < bins[i].size();j++){
             int shapeIndex = bins[i][j];
             if(j == 0){
@@ -496,36 +506,37 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
 
         fernOutput.push_back(currFernOutput);
     }
-    
+
     // record the fern output 
     ofstream fout;
-    fout.open("trainingOutput.txt",std::ofstream::out | std::ofstream::app);
+    fout.open(currentFileName,std::ofstream::out | std::ofstream::app);
     for(int i = 0;i < fernOutput.size();i++){
         for(int j = 0;j < fernOutput[i].size();j++){
             fout<<fernOutput[i][j]<<" "; 
         }
         fout<<endl;
     }
-    
+    fout.close();
+
     // update current shape, add the corresponding fern output
     for(int i = 0;i < currentShape.size();i++){
         int binIndex = fernResult[i];
         currentShape[i] = vectorPlus(currentShape[i],fernOutput[binIndex]);
-        
+
         // there exists cases that after update, the new keypoint coordinates
         // exceed the range of image, I am not quite sure about how to deal with
         // this image  
         for(int j = 0;j < currentShape[i].size();j++){
             if(currentShape[i][j].x > averageWidth-1){
-                cout<<"Extend..."<<endl;
+                // cout<<"Extend..."<<endl;
                 currentShape[i][j].x = averageWidth-1;
             }
             if(currentShape[i][j].y > averageHeight-1){
-                cout<<"Extend..."<<endl;
+                // cout<<"Extend..."<<endl;
                 currentShape[i][j].y = averageHeight-1;
             }
             if(currentShape[i][j].x < 0){
-                currentShape[i][j] = 0;
+                currentShape[i][j].x = 0;
             } 
             if(currentShape[i][j].y < 0){
                 currentShape[i][j].y = 0;
@@ -582,11 +593,128 @@ vector<Point2d> Face::vectorPlus(const vector<Point2d>& shape1, const vector<Poi
         cout<<"Input vectors have to be of the same size."<<endl;
         exit(-1);
     }
-    
+
     vector<Point2d> result;
     for(int i = 0;i < shape1.size();i++){
         result.push_back(shape1[i] + shape2[i]);
     }
     return result;
 }
+
+void Face::faceTest(){
+    ifstream fin;
+    fin.open("./trainingouput/featurePixelCoordinates.txt");
+
+    string testImageName = "test.jpg";
+    Mat testImg = imread(testImageName.c_str());    
+
+    vector<Point2d> inputPixelCoordinates;
+    vector<int> inputNearestIndex;
+    double x = 0;
+    double y = 0;
+    char temp;
+    for(int i = 0;i < featurePixelNum;i++){
+        fin>>temp>>x>>temp>>y>>temp;
+        inputPixelCoordinates.push_back(Point2d(x,y));
+    }
+
+    for(int i = 0;i < featurePixelNum;i++){
+        fin>>x;
+        inputNearestIndex.push_back(int(x)); 
+    }
+
+    vector<Point2d> testCurrentShape = meanShape;  
+
+    for(int i = 0;i < firstLevelNum;i++){
+        secondLevelTest(i,testCurrentShape,inputPixelCoordinates, inputNearestIndex, testImg);
+    }
+}
+
+void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape, 
+        const vector<Point2d> inputPixelCoordinates,const vector<Point2d>& inputNearestIndex,
+        const Mat& testImg){
+    ifstream fin;
+    string fileName = "./trainingouput/" + to_string(currLevelNum) + ".txt"; 
+    fin.open(fileName);
+
+    vector<double> pixelDensity;
+
+    for(int i = 0;i < inputPixelCoordinates.size();i++){
+        Point2d temp;
+        temp = inputPixelCoordinates[i] + testCurrentShape[nearestKeypointIndex[i]];    
+        if(temp.y > averageHeight-1)
+            temp.y = averageHeight-1;
+        if(temp.x > averageWidth-1) 
+            temp.x = averageWidth-1;
+        if(temp.y < 0)
+            temp.y = 0;
+        if(temp.x < 0)
+            temp.x = 0;
+        Vec3b color = testImg.at<Vec3b>((int)(temp.y),(int)(temp.x));
+        int r = color.val[2];
+        int g = color.val[1];
+        int b = color.val[0];
+        double density = 0.2126 * r +  0.7152 * g + 0.0722 * b;
+        pixelDensity.push_back(density);
+    } 
+
+
+
+    for(int i = 0;i < secondLevelNum;i++){
+        vector<Point2i> selectedFeatureIndex;
+        for(int j = 0;j < featureNumInFern;j++){
+            double x = 0;
+            double y = 0;
+            cin>>x>>y;
+            selectedFeatureIndex.push_back(Point2i(x,y));   
+        } 
+        int binNum = pow(2.0, featureNumInFern);
+        vector<vector<Point2d> > fernOutput;
+        for(int j = 0;j < binNum;j++){
+            vector<Point2d> currFernOutput;
+            for(int k = 0;k < keypointNum;k++){
+                double x = 0;
+                double y = 0;
+                char temp;
+                cin>>temp>>x>>temp>>y>>temp;
+                currFernOutput.push_back(Point2d(x,y)); 
+            } 
+            fernOutput.push_back(currFernOutput); 
+        }
+
+        int binIndex = 0;
+        for(int j = 0;j < featureNumInFern;j++){
+            int selectedIndex1 = selectedFeatureIndex[j].x;
+            int selectedIndex2 = selectedFeatureIndex[j].y; 
+            if(pixelDensity[selectedIndex1] > pixelDensity[selectedIndex2]){
+                binIndex = binIndex + (int)(pow(2.0,j)); 
+            }  
+        }
+        testCurrentShape = vectorPlus(testCurrentShape, fernOutput[binIndex]);  
+
+        for(int j = 0;j < testCurrentShape.size();j++){
+            if(testCurrentShape[i][j].x > averageWidth-1){
+                // cout<<"Extend..."<<endl;
+                testCurrentShape[i][j].x = averageWidth-1;
+            }
+            if(testCurrentShape[i][j].y > averageHeight-1){
+                // cout<<"Extend..."<<endl;
+                testCurrentShape[i][j].y = averageHeight-1;
+            }
+            if(testCurrentShape[i][j].x < 0){
+                testCurrentShape[i][j].x = 0;
+            } 
+            if(testCurrentShape[i][j].y < 0){
+                testCurrentShape[i][j].y = 0;
+            }
+        }
+    }
+
+}
+
+
+
+
+
+
 

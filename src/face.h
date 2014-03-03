@@ -33,6 +33,7 @@ class Face{
         int featureNumInFern;
         double shrinkage;
         int debug;
+        int mode;
 
         //grayscale training images
         // vector<Mat> trainingImages;
@@ -53,6 +54,7 @@ class Face{
         //average width and height of input images
         int averageHeight;
         int averageWidth;
+        string currentFileName;
 
         //the coordinates of each feature pixel, relative to the nearest
         //keypoint 
@@ -89,6 +91,10 @@ class Face{
         double  getCovariance(const vector<double>& v1, const vector<double>& v2);
         vector<Point2d>  vectorMinus(const vector<Point2d>& shape1, const vector<Point2d>& shape2);
         vector<Point2d>  vectorPlus(const vector<Point2d>& shape1, const vector<Point2d>& shape2);
+
+        // test 
+        void faceTest();
+
 
         // read parameters from parameters.ini
         void readParameters();
