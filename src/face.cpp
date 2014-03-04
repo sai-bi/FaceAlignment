@@ -212,8 +212,6 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
         vector<double> covarianceYF;
         for(int j = 0;j < pixelDensity.size();j++){
             double temp = getCovariance(projectResult,pixelDensity[j]);
-            // covarianceYF.push_back(getCovariance(projectResult,pixelDensity[j]));      
-            // cout<<temp<<" ";
             covarianceYF.push_back(temp);
         }
 

@@ -63,8 +63,6 @@ class Face{
         vector<int> nearestKeypointIndex;
 
 
-        // vector<vector<double> > trainingFeatures;
-        // vector<vector<double> > testingFeatures;
 
         Face();
 
@@ -94,8 +92,6 @@ class Face{
 
         // test 
         void faceTest();
-
-
         // read parameters from parameters.ini
         void readParameters();
         void secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape, 
