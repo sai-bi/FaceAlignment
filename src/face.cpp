@@ -73,9 +73,10 @@ void Face::readData(){
             fin>>x>>y;
             keypoint.push_back(Point2d(x,y));
         }
-
         targetShape.push_back(keypoint);
     }
+
+    
 
     fin.close();
 
@@ -429,6 +430,22 @@ void Face::secondLevelRegression(const Mat& covariance,const vector<vector<doubl
     }   
 }
 
+void Face::getRandomThrehold(vector<int>& threhold){
+    threhold.clear();   
+    int binNum = pow(2.0, featureNumInFern); 
+    threhold.push_back(0);
+    for(int i = 0;i < binNum;i++){
+        int temp = rand() % 33;
+        threhold.push_back(temp);
+    }
+    sort(threhold.begin(), threhold.end());
+    
+    threhold[binNum] = binNum;    
+}
+
+
+
+
 void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
         const vector<vector<double> >& pixelDensity){
     // turn each shape into a scalar according to relative intensity of pixels
@@ -453,7 +470,18 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
         vector<int> temp;
         bins.push_back(temp);
     }
+    
+    vector<int> threhold;
+    getRandomThrehold(threhold);
 
+    ofstream fout;
+    fout.open(currentFileName,std::ofstream::out | std::ofstream::app);
+    
+    for(int i = 0;i < threhold.size();i++){
+        fout<<threhold[i]<<" "; 
+    }
+    fout<<endl;
+        
     for(int i = 0;i < currentShape.size();i++){
         int tempResult = 0;
         for(int j = 0;j < selectedFeatureIndex.size();j++){
@@ -467,8 +495,15 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
                 tempResult = tempResult + int(pow(2.0,j)); 
             }
         }
-        fernResult.push_back(tempResult);
-        bins[tempResult].push_back(i); 
+        for(int j = 0;j < binNum;j++){
+            if(tempResult >= threhold[j] && tempResult < threhold[j+1]){
+                bins[j].push_back(i);
+                fernResult.push_back(j);
+                break;
+            }
+        }
+
+        // bins[tempResult].push_back(i); 
     }
 
     // get random threhold, the number of bins is 2^featureNumInFern; 
@@ -508,8 +543,8 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
     }
 
     // record the fern output 
-    ofstream fout;
-    fout.open(currentFileName,std::ofstream::out | std::ofstream::app);
+    // ofstream fout;
+    // fout.open(currentFileName,std::ofstream::out | std::ofstream::app);
     for(int i = 0;i < fernOutput.size();i++){
         for(int j = 0;j < fernOutput[i].size();j++){
             fout<<fernOutput[i][j]<<" "; 
@@ -629,6 +664,7 @@ void Face::faceTest(){
     
 
     vector<Point2d> testCurrentShape = meanShape;  
+    // vector<Point2d> testCurrentShape = targetShape[4];
     for(int i = 0;i < firstLevelNum;i++){
         cout<<"Level: "<<i<<endl;
         secondLevelTest(i,testCurrentShape,inputPixelCoordinates, inputNearestIndex, testImg);
@@ -685,6 +721,7 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
 
 
     for(int i = 0;i < secondLevelNum;i++){
+        
         vector<Point2i> selectedFeatureIndex;
         for(int j = 0;j < featureNumInFern;j++){
             double x = 0;
@@ -692,7 +729,16 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
             fin>>x>>y;
             selectedFeatureIndex.push_back(Point2i(x,y));   
         } 
+
+        vector<int> threhold;
         int binNum = pow(2.0, featureNumInFern);
+        
+        for(int i = 0;i < binNum + 1;i++){
+            int temp;
+            fin>>temp;
+            threhold.push_back(temp);
+        }
+
         vector<vector<Point2d> > fernOutput;
         for(int j = 0;j < binNum;j++){
             vector<Point2d> currFernOutput;
@@ -707,6 +753,7 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
             fernOutput.push_back(currFernOutput); 
         }
 
+
         int binIndex = 0;
         for(int j = 0;j < featureNumInFern;j++){
             int selectedIndex1 = selectedFeatureIndex[j].x;
@@ -715,6 +762,15 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
                 binIndex = binIndex + (int)(pow(2.0,j)); 
             }  
         }
+
+        for(int j = 0;j < binNum;j++){
+            if(binIndex >= threhold[j] && binIndex < threhold[j+1]){
+                binIndex = j;
+                break;
+            }
+        }
+
+
         
         // Mat tempImg = testImg.clone();
         testCurrentShape = vectorPlus(testCurrentShape, fernOutput[binIndex]);  

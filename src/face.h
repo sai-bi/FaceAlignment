@@ -94,7 +94,7 @@ class Face{
 
         // test 
         void faceTest();
-
+        void getRandomThrehold(vector<int>& threhold);
 
         // read parameters from parameters.ini
         void readParameters();
