@@ -605,10 +605,10 @@ void Face::faceTest(){
     ifstream fin;
     fin.open("./trainingoutput/featurePixelCoordinates.txt");
 
-    // string testImageName = "test.jpg";
-    // Mat testImg = imread(testImageName.c_str());    
-    int testIndex = 5;
-    Mat testImg = faceImages[testIndex];
+    string testImageName = "test.jpg";
+    Mat testImg = imread(testImageName.c_str());    
+    // int testIndex = 5;
+    // Mat testImg = faceImages[testIndex];
 
     resize(testImg,testImg,Size(averageWidth,averageHeight)); 
 
@@ -642,15 +642,14 @@ void Face::faceTest(){
     
     Mat testImg2 = testImg.clone();
     
-    for(int i = 0;i < targetShape[testIndex].size();i++){
-        circle(testImg2,targetShape[testIndex][i],3,Scalar(0,0,255),-1,8,0);
-    }
-    imshow("target",testImg2); 
+    // for(int i = 0;i < targetShape[testIndex].size();i++){
+        // circle(testImg2,targetShape[testIndex][i],3,Scalar(0,0,255),-1,8,0);
+    // }
+    // imshow("target",testImg2); 
 
     for(int i = 0;i < testCurrentShape.size();i++){
         circle(testImg,testCurrentShape[i],3,Scalar(255,0,0), -1, 8,0); 
     }
-
     imshow("output",testImg);
     waitKey(0);
 }
