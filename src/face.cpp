@@ -221,9 +221,6 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
         }
 
         // get the pair with highest correlation corr(y,fi - fj);  
-        // zero_matrix<double> correlation;
-        // double stdY = sqrt(getCovariance(projectResult,projectResult)); 
-        // cout<<stdY<<endl; 
         int selectedIndex1 = 0;
         int selectedIndex2 = 0;
         double highest = MINNUM;
@@ -256,7 +253,7 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
                     exit(-1); 
                 }
 
-                double temp4 = temp1 * temp2 / (sqrt(temp3));
+                double temp4 = (temp1 - temp2) / temp3;
 
                 if(abs(temp4) > highest){
                     highest = abs(temp4);
@@ -398,9 +395,10 @@ void Face::firstLevelRegression(){
 
         for(int j = 0;j < pixelDensity.size();j++){
             for(int k = j+1;k < pixelDensity.size();k++){
-                double temp = getCovariance(pixelDensity[j],pixelDensity[k]);
-                // covariance(j,k) = temp;
-                // covariance(k,j) = temp;
+                double temp1 = getCovariance(pixelDensity[j],pixelDensity[j]);
+                double temp2 = getCovariance(pixelDensity[k],pixelDensity[k]);
+                double temp3 = 2 * getCovariance(pixelDensity[j],pixelDensity[k]);
+                double temp = sqrt(temp1 + temp2 + temp3);
                 covariance.at<double>(j,k) = temp;
                 covariance.at<double>(k,j) = temp;
             }
@@ -645,10 +643,10 @@ void Face::faceTest(){
     ifstream fin;
     fin.open("./trainingoutput/featurePixelCoordinates.txt");
 
-    string testImageName = "test.jpg";
-    Mat testImg = imread(testImageName.c_str());    
-    // int testIndex = 5;
-    // Mat testImg = faceImages[testIndex];
+    // string testImageName = "test.jpg";
+    // Mat testImg = imread(testImageName.c_str());    
+    int testIndex = 320;
+    Mat testImg = faceImages[testIndex];
 
     resize(testImg,testImg,Size(averageWidth,averageHeight)); 
 
