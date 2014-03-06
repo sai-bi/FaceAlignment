@@ -459,7 +459,6 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
     // divide shapes into bins based on threholds and scalars
     // for each bin, calculate its output
 
-
     // fern result records the bins the image is in
     vector<int> fernResult;
 
@@ -692,13 +691,6 @@ void Face::faceTest(){
         circle(testImg1,meanShape[i],3,Scalar(0,0,255),-1,8,0);
     }
     imshow("initial",testImg1);
-
-    // Mat testImg2 = testImg.clone();
-
-    // for(int i = 0;i < targetShape[testIndex].size();i++){
-    // circle(testImg2,targetShape[testIndex][i],3,Scalar(0,0,255),-1,8,0);
-    // }
-    // imshow("target",testImg2); 
 
     for(int i = 0;i < testCurrentShape.size();i++){
         circle(testImg,testCurrentShape[i],3,Scalar(255,0,0), -1, 8,0); 
