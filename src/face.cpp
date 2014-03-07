@@ -414,8 +414,6 @@ void Face::firstLevelRegression(){
                 currLocation = featurePixelCoordinates[j] + currentShape[k][nearestKeypointIndex[j]];
                 newCoordinates.push_back(currLocation);
 
-                // temp1.push_back(trainingImages((int)(currLocation.y),(int)(currLocation.x))); 
-                // cout<<currLocation.x<<" "<<currLocation.y<<endl;
 
                 // to deal with the cases that may happen: during the regression
                 // process, the keypoint coordinates may exceed the range of the
@@ -536,32 +534,6 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
 
     ofstream fout;
     fout.open(currentFileName,std::ofstream::out | std::ofstream::app);
-
-    // for(int i = 0;i < threhold.size();i++){
-        // fout<<threhold[i]<<" "; 
-    // }
-    // fout<<endl;
-    // vector<double> thresh;   
-    // RNG rn(getTickCount());
-
-    // for(int i = 0;i < selectedFeatureIndex.size();i++){
-        // int selectedIndex1 = selectedFeatureIndex[i].x;
-        // int selectedIndex2 = selectedFeatureIndex[i].y;
-        
-        // vector<double> range;
-        // for(int j = 0;j < currentShape.size();j++){
-            // double density1 = pixelDensity[selectedIndex1][j];
-            // double density2 = pixelDensity[selectedIndex2][j];
-
-            // range.push_back(density1 - density2);
-        // }
-        // int minValue = *min_element(range.begin(),range.end());
-        // int maxValue = *max_element(range.begin(),range.end());
-        
-        // thresh.push_back(rn.uniform(minValue,maxValue));
-    // }
-
-
 
     
     for(int i = 0;i < thresh.size();i++){
@@ -811,11 +783,6 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
         // vector<int> threhold;
         int binNum = pow(2.0, featureNumInFern);
 
-        // for(int i = 0;i < binNum + 1;i++){
-            // int temp;
-            // fin>>temp;
-            // threhold.push_back(temp);
-        // }
         vector<double> thresh;
         for(int j = 0;j < featureNumInFern;j++){
             double x = 0;
