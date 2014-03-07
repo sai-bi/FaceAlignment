@@ -35,6 +35,7 @@ class Face{
         int debug;
         int mode;
 
+        // RNG rng;
         //grayscale training images
         // vector<Mat> trainingImages;
         //grayscale testing images 

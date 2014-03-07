@@ -176,6 +176,7 @@ void Face::getFeaturePixelLocation(){
     }
     fout<<endl;
 
+
     for(int i = 0;i < nearestKeypointIndex.size();i++){
         fout<<nearestKeypointIndex[i]<<" ";
     }
@@ -474,16 +475,40 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
         bins.push_back(temp);
     }
 
-    vector<int> threhold;
-    getRandomThrehold(threhold);
+    // vector<int> threhold;
+    // getRandomThrehold(threhold);
 
     ofstream fout;
     fout.open(currentFileName,std::ofstream::out | std::ofstream::app);
 
-    for(int i = 0;i < threhold.size();i++){
-        fout<<threhold[i]<<" "; 
+    // for(int i = 0;i < threhold.size();i++){
+        // fout<<threhold[i]<<" "; 
+    // }
+    // fout<<endl;
+    vector<double> thresh;   
+    RNG rn(getTickCount());
+    for(int i = 0;i < selectedFeatureIndex.size();i++){
+        int selectedIndex1 = selectedFeatureIndex[i].x;
+        int selectedIndex2 = selectedFeatureIndex[i].y;
+        
+        vector<double> range;
+        for(int j = 0;j < currentShape.size();j++){
+            double density1 = pixelDensity[selectedIndex1][j];
+            double density2 = pixelDensity[selectedIndex2][j];
+
+            range.push_back(density1 - density2);
+        }
+        int minValue = *min_element(range.begin(),range.end());
+        int maxValue = *max_element(range.begin(),range.end());
+        
+        thresh.push_back(rn.uniform(minValue,maxValue));
+    }
+    
+    for(int i = 0;i < thresh.size();i++){
+        fout<<thresh[i]<<" ";
     }
     fout<<endl;
+
 
     for(int i = 0;i < currentShape.size();i++){
         int tempResult = 0;
@@ -494,17 +519,19 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
 
             // binary number: 0 or 1
             // turn binary number into an integer
-            if(density1 > density2){
+            if(density1 - density2 > thresh[j]){
                 tempResult = tempResult + int(pow(2.0,j)); 
             }
         }
-        for(int j = 0;j < binNum;j++){
-            if(tempResult >= threhold[j] && tempResult < threhold[j+1]){
-                bins[j].push_back(i);
-                fernResult.push_back(j);
-                break;
-            }
-        }
+        // for(int j = 0;j < binNum;j++){
+            // if(tempResult >= threhold[j] && tempResult < threhold[j+1]){
+                // bins[j].push_back(i);
+                // fernResult.push_back(j);
+                // break;
+            // }
+        // }
+        bins[tempResult].push_back(i);    
+        fernResult.push_back(tempResult);
 
         // bins[tempResult].push_back(i); 
     }
@@ -643,10 +670,10 @@ void Face::faceTest(){
     ifstream fin;
     fin.open("./trainingoutput/featurePixelCoordinates.txt");
 
-    // string testImageName = "test.jpg";
-    // Mat testImg = imread(testImageName.c_str());    
-    int testIndex = 320;
-    Mat testImg = faceImages[testIndex];
+    string testImageName = "test1.jpg";
+    Mat testImg = imread(testImageName.c_str());    
+    // int testIndex = 491;
+    // Mat testImg = faceImages[testIndex];
 
     resize(testImg,testImg,Size(averageWidth,averageHeight)); 
 
@@ -737,14 +764,21 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
             selectedFeatureIndex.push_back(Point2i(x,y));   
         } 
 
-        vector<int> threhold;
+        // vector<int> threhold;
         int binNum = pow(2.0, featureNumInFern);
 
-        for(int i = 0;i < binNum + 1;i++){
-            int temp;
-            fin>>temp;
-            threhold.push_back(temp);
+        // for(int i = 0;i < binNum + 1;i++){
+            // int temp;
+            // fin>>temp;
+            // threhold.push_back(temp);
+        // }
+        vector<double> thresh;
+        for(int j = 0;j < featureNumInFern;j++){
+            double x = 0;
+            fin>>x;
+            thresh.push_back(x);
         }
+
 
         vector<vector<Point2d> > fernOutput;
         for(int j = 0;j < binNum;j++){
@@ -765,17 +799,18 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
         for(int j = 0;j < featureNumInFern;j++){
             int selectedIndex1 = selectedFeatureIndex[j].x;
             int selectedIndex2 = selectedFeatureIndex[j].y; 
-            if(pixelDensity[selectedIndex1] > pixelDensity[selectedIndex2]){
+            if(pixelDensity[selectedIndex1] - pixelDensity[selectedIndex2] > thresh[j]){
                 binIndex = binIndex + (int)(pow(2.0,j)); 
             }  
         }
 
-        for(int j = 0;j < binNum;j++){
-            if(binIndex >= threhold[j] && binIndex < threhold[j+1]){
-                binIndex = j;
-                break;
-            }
-        }
+        // for(int j = 0;j < binNum;j++){
+            // if(binIndex >= threhold[j] && binIndex < threhold[j+1]){
+                // binIndex = j;
+                // break;
+            // }
+        // }
+        
 
 
 
