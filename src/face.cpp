@@ -186,14 +186,15 @@ void Face::getFeaturePixelLocation(){
 
 
 void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& pixelDensity,
-        vector<Point2i>& selectedFeatureIndex){
+        vector<Point2i>& selectedFeatureIndex,
+        vector<double>& threhold){
 
     // deltaShape: difference between current shape and target shape
     // we put x and y coordinates together in one vectors
     vector<vector<double> > deltaShape; 
     getDeltaShape(deltaShape);
     selectedFeatureIndex.clear();
-
+    threhold.clear();
 
     //get a random direction
     for(int i = 0;i < featureNumInFern;i++){    
@@ -258,21 +259,75 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
 
                 if(abs(temp4) > highest){
                     highest = abs(temp4);
-                    if(temp4 > 0){
-                        selectedIndex1 = j;
-                        selectedIndex2 = k;
-                    }
-                    else{
-                        selectedIndex1 = k;
-                        selectedIndex2 = j;
-                    }
+                    // if(temp4 > 0){
+                        // selectedIndex1 = j;
+                        // selectedIndex2 = k;
+                    // }
+                    // else{
+                        // selectedIndex1 = k;
+                        // selectedIndex2 = j;
+                    // }
+                    selectedIndex1 = j;
+                    selectedIndex2 = k;
                 }
             }
         }
 
-        // cout<<selectedIndex1<<" "<<selectedIndex2<<endl;
 
         selectedFeatureIndex.push_back(Point2i(selectedIndex1,selectedIndex2));
+            
+        vector<double> densityDiff;
+        for(int j = 0;j < imgNum;j++){
+            double temp1 = pixelDensity[selectedIndex1][j];
+            double temp2 = pixelDensity[selectedIndex2][j];
+            densityDiff.push_back(temp1 - temp2);
+        } 
+    
+        double best_thresh = -1;
+        double best_var = -1;
+        RNG rg(getTickCount());
+        for(int j = 0;j < 100;j++){
+            double thresh = densityDiff[rg.uniform(0,imgNum)]; 
+            int n1 = 0;
+            int n2 = 0;
+            double m1 = 0;
+            double m2 = 0;
+            
+            for(int k = 0;k < imgNum;k++){
+                if(densityDiff[k] >= thresh){
+                    m1 = m1 + projectResult[k];
+                    n1++; 
+                }
+                else{
+                    m2 = m2 + projectResult[k];
+                    n2++;
+                }
+            } 
+
+            m1 = m1 / n1;
+            m2 = m2 / n2;
+
+            double v1 = 0;
+            double v2 = 0;
+            
+            for(int k = 0;k < imgNum;k++){
+                if(densityDiff[k] >= thresh){
+                    v1 = v1 + pow(projectResult[k] - m1, 2.0);
+                }
+                else{
+                    v2 = v2 + pow(projectResult[k]- m2, 2.0);
+                }
+            }
+            
+            double v = n1 * log(v1/n1+1e-6) + n2 * log(v2/n2+1e-6);
+
+            if(best_var < 0 || best_var > v){
+                best_var = v;
+                best_thresh = thresh;
+            }
+        }
+
+        threhold.push_back(best_thresh); 
     } 
 
 
@@ -415,8 +470,8 @@ void Face::secondLevelRegression(const Mat& covariance,const vector<vector<doubl
         // select best feature
         // selectedFeatureIndex records the feture pairs we select, 
         vector<Point2i> selectedFeatureIndex;  
-        // cout<<"extractFeature"<<endl;
-        extractFeature(covariance,pixelDensity,selectedFeatureIndex); 
+        vector<double> thresh;
+        extractFeature(covariance,pixelDensity,selectedFeatureIndex,thresh); 
 
         // record selected feature index 
         ofstream fout;
@@ -430,7 +485,7 @@ void Face::secondLevelRegression(const Mat& covariance,const vector<vector<doubl
 
         //construct a fern using selected best features 
         // cout<<"construct fern"<<endl;
-        constructFern(selectedFeatureIndex,pixelDensity); 
+        constructFern(selectedFeatureIndex,pixelDensity,thresh); 
     }   
 }
 
@@ -452,7 +507,8 @@ void Face::getRandomThrehold(vector<int>& threhold){
 
 
 void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
-        const vector<vector<double> >& pixelDensity){
+        const vector<vector<double> >& pixelDensity,
+        const vector<double>& thresh){
     // turn each shape into a scalar according to relative intensity of pixels
     // generate random threholds
     // divide shapes into bins based on threholds and scalars
@@ -485,24 +541,28 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
         // fout<<threhold[i]<<" "; 
     // }
     // fout<<endl;
-    vector<double> thresh;   
-    RNG rn(getTickCount());
-    for(int i = 0;i < selectedFeatureIndex.size();i++){
-        int selectedIndex1 = selectedFeatureIndex[i].x;
-        int selectedIndex2 = selectedFeatureIndex[i].y;
-        
-        vector<double> range;
-        for(int j = 0;j < currentShape.size();j++){
-            double density1 = pixelDensity[selectedIndex1][j];
-            double density2 = pixelDensity[selectedIndex2][j];
+    // vector<double> thresh;   
+    // RNG rn(getTickCount());
 
-            range.push_back(density1 - density2);
-        }
-        int minValue = *min_element(range.begin(),range.end());
-        int maxValue = *max_element(range.begin(),range.end());
+    // for(int i = 0;i < selectedFeatureIndex.size();i++){
+        // int selectedIndex1 = selectedFeatureIndex[i].x;
+        // int selectedIndex2 = selectedFeatureIndex[i].y;
         
-        thresh.push_back(rn.uniform(minValue,maxValue));
-    }
+        // vector<double> range;
+        // for(int j = 0;j < currentShape.size();j++){
+            // double density1 = pixelDensity[selectedIndex1][j];
+            // double density2 = pixelDensity[selectedIndex2][j];
+
+            // range.push_back(density1 - density2);
+        // }
+        // int minValue = *min_element(range.begin(),range.end());
+        // int maxValue = *max_element(range.begin(),range.end());
+        
+        // thresh.push_back(rn.uniform(minValue,maxValue));
+    // }
+
+
+
     
     for(int i = 0;i < thresh.size();i++){
         fout<<thresh[i]<<" ";
@@ -519,21 +579,14 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
 
             // binary number: 0 or 1
             // turn binary number into an integer
-            if(density1 - density2 > thresh[j]){
+            if(density1 - density2 >= thresh[j]){
                 tempResult = tempResult + int(pow(2.0,j)); 
             }
         }
-        // for(int j = 0;j < binNum;j++){
-            // if(tempResult >= threhold[j] && tempResult < threhold[j+1]){
-                // bins[j].push_back(i);
-                // fernResult.push_back(j);
-                // break;
-            // }
-        // }
+        
         bins[tempResult].push_back(i);    
         fernResult.push_back(tempResult);
 
-        // bins[tempResult].push_back(i); 
     }
 
     // get random threhold, the number of bins is 2^featureNumInFern; 
@@ -790,7 +843,7 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
         for(int j = 0;j < featureNumInFern;j++){
             int selectedIndex1 = selectedFeatureIndex[j].x;
             int selectedIndex2 = selectedFeatureIndex[j].y; 
-            if(pixelDensity[selectedIndex1] - pixelDensity[selectedIndex2] > thresh[j]){
+            if(pixelDensity[selectedIndex1] - pixelDensity[selectedIndex2] >= thresh[j]){
                 binIndex = binIndex + (int)(pow(2.0,j)); 
             }  
         }

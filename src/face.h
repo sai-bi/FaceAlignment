@@ -80,7 +80,8 @@ class Face{
 
         void  getFeaturePixelLocation(); 
         void  extractFeature(const Mat& covariance,const vector<vector<double> >& pixelDensity,
-                 vector<Point2i>& selectedFeatureIndex);
+                 vector<Point2i>& selectedFeatureIndex,
+                 vector<double>& threhold);
 
         double  product(const vector<double>& v1, const vector<double>& v2);
         void  getDeltaShape(vector<vector<double> >& deltaShape);
@@ -88,7 +89,8 @@ class Face{
         void  firstLevelRegression();
         void  secondLevelRegression(const Mat& covariance,const vector<vector<double> >& pixelDensity);
         void  constructFern(const vector<Point2i>& selectedFeatureIndex,
-                const vector<vector<double> > & pixelDensity);
+                const vector<vector<double> > & pixelDensity,
+                const vector<double>& thresh);
         double  getCovariance(const vector<double>& v1, const vector<double>& v2);
         vector<Point2d>  vectorMinus(const vector<Point2d>& shape1, const vector<Point2d>& shape2);
         vector<Point2d>  vectorPlus(const vector<Point2d>& shape1, const vector<Point2d>& shape2);
