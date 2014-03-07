@@ -399,7 +399,7 @@ void Face::firstLevelRegression(){
                 double temp1 = getCovariance(pixelDensity[j],pixelDensity[j]);
                 double temp2 = getCovariance(pixelDensity[k],pixelDensity[k]);
                 double temp3 = 2 * getCovariance(pixelDensity[j],pixelDensity[k]);
-                double temp = sqrt(temp1 + temp2 + temp3);
+                double temp = sqrt(temp1 + temp2 - temp3);
                 covariance.at<double>(j,k) = temp;
                 covariance.at<double>(k,j) = temp;
             }
@@ -682,15 +682,6 @@ void Face::faceTest(){
     double x = 0;
     double y = 0;
     char temp;
-    // for(int i = 0;i < featurePixelNum;i++){
-    // fin>>temp>>x>>temp>>y>>temp;
-    // inputPixelCoordinates.push_back(Point2d(x,y));
-    // }
-
-    // for(int i = 0;i < featurePixelNum;i++){
-    // fin>>x;
-    // inputNearestIndex.push_back(int(x)); 
-    // }
 
 
     vector<Point2d> testCurrentShape = meanShape;  
