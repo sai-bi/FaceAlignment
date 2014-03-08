@@ -20,11 +20,6 @@ void Face::run(){
 
     // PROGRAM MODE: 0 for training, 1 for testing
     if(mode == 0){
-        // get feature location
-        // cout<<"Get feature pixel locations..."<<endl;
-        // getFeaturePixelLocation();
-
-        // regression
         cout<<"First level regression..."<<endl;
         firstLevelRegression();
     }
@@ -151,10 +146,49 @@ void Face::getFeaturePixelLocation(){
 
 
     random_shuffle(allIndex.begin(),allIndex.end());
+     
+    double maxX = MINNUM;
+    double maxY = MINNUM;
+    double minX = MAXNUM;
+    double minY = MAXNUM; 
+    for(int i = 0;i < meanShape.size();i++){
+        if(meanShape[i].x > maxX){
+            maxX = meanShape[i].x;
+        }
+        if(meanShape[i].x < minX){
+            minX = meanShape[i].x;
+        }
+        if(meanShape[i].y > maxY){
+            maxY = meanShape[i].y;
+        }
+        if(meanShape[i].y < minY){
+            minY = meanShape[i].y;
+        }
+    } 
+        
+    // limit the pixel location range
 
-    for(int i = 0;i < featurePixelNum;i++){
+    double leftX = (averageWidth - (maxX - minX)) / 4;
+    double upY = (averageHeight - (maxY - minY)) / 4;
+   
+    // cout<<leftX<<endl;
+    // cout<<upY<<endl;
+
+    int count = 0;
+    for(int i = 0;i < allIndex.size();i++){
+        if(count == featurePixelNum){
+            break;
+        }
+        
         int x = allIndex[i] % averageWidth;
         int y = allIndex[i] / averageWidth;
+            
+
+        if(x < leftX || x > averageWidth - leftX || y < upY || y > averageHeight - upY){
+            continue;
+        }
+            
+        count++;
 
         double dist = MAXNUM;
         int minIndex = 0;
@@ -168,6 +202,9 @@ void Face::getFeaturePixelLocation(){
         featurePixelCoordinates.push_back(Point2d(x,y) - meanShape[minIndex]);
         nearestKeypointIndex.push_back(minIndex);
     } 
+
+    // cout<<count<<endl;
+    cout<<featurePixelCoordinates.size()<<endl;
 
     ofstream fout;
     fout.open("./trainingoutput/featurePixelCoordinates.txt", std::ofstream::out|std::ofstream::app); 
@@ -414,8 +451,6 @@ void Face::firstLevelRegression(){
                 currLocation = featurePixelCoordinates[j] + currentShape[k][nearestKeypointIndex[j]];
                 newCoordinates.push_back(currLocation);
 
-                // temp1.push_back(trainingImages((int)(currLocation.y),(int)(currLocation.x))); 
-                // cout<<currLocation.x<<" "<<currLocation.y<<endl;
 
                 // to deal with the cases that may happen: during the regression
                 // process, the keypoint coordinates may exceed the range of the
@@ -723,7 +758,7 @@ void Face::faceTest(){
     ifstream fin;
     fin.open("./trainingoutput/featurePixelCoordinates.txt");
 
-    string testImageName = "test1.jpg";
+    string testImageName = "test3.jpg";
     Mat testImg = imread(testImageName.c_str());    
     // int testIndex = 491;
     // Mat testImg = faceImages[testIndex];
@@ -886,7 +921,6 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
     fin.close();
 
 }
-
 
 
 
