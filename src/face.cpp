@@ -296,14 +296,7 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
 
                 if(abs(temp4) > highest){
                     highest = abs(temp4);
-                    // if(temp4 > 0){
-                        // selectedIndex1 = j;
-                        // selectedIndex2 = k;
-                    // }
-                    // else{
-                        // selectedIndex1 = k;
-                        // selectedIndex2 = j;
-                    // }
+                    
                     selectedIndex1 = j;
                     selectedIndex2 = k;
                 }
@@ -572,31 +565,7 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
     ofstream fout;
     fout.open(currentFileName,std::ofstream::out | std::ofstream::app);
 
-    // for(int i = 0;i < threhold.size();i++){
-        // fout<<threhold[i]<<" "; 
-    // }
-    // fout<<endl;
-    // vector<double> thresh;   
-    // RNG rn(getTickCount());
-
-    // for(int i = 0;i < selectedFeatureIndex.size();i++){
-        // int selectedIndex1 = selectedFeatureIndex[i].x;
-        // int selectedIndex2 = selectedFeatureIndex[i].y;
-        
-        // vector<double> range;
-        // for(int j = 0;j < currentShape.size();j++){
-            // double density1 = pixelDensity[selectedIndex1][j];
-            // double density2 = pixelDensity[selectedIndex2][j];
-
-            // range.push_back(density1 - density2);
-        // }
-        // int minValue = *min_element(range.begin(),range.end());
-        // int maxValue = *max_element(range.begin(),range.end());
-        
-        // thresh.push_back(rn.uniform(minValue,maxValue));
-    // }
-
-
+  
 
     
     for(int i = 0;i < thresh.size();i++){
