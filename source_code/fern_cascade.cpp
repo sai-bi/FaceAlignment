@@ -58,24 +58,35 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     }
     Mat_<double> correlation(pixel_pair_num,pixel_pair_num);
     for(int i = 0;i < pixel_pair_num;i++){
-        for(int j = i+1;j< pixel_pair_num;j++){
+        for(int j = i;j< pixel_pair_num;j++){
             double correlation_result = calculate_correlation(pixel_density[i],pixel_density[j]);
             correlation(i,j) = correlation_result;
             correlation(j,i) = correlation_result;
         }
     }
+    primary_fern_.resize(second_level_num);
+    for(int i = 0;i < second_level_num;i++){
+        primary_fern_[i].train(pixel_density,correlation,pixel_coordinates,nearest_keypoint_index,
+                               current_shapes,target_shapes); 
+    }
 }
 
 
-double FernCascade::calculate_correlation(const vector<double>& v_1, const
+double FernCascade::calculate_covariance(const vector<double>& v_1, const
         vector<double>& v_2){
     double sum_1 = 0;
     double sum_2 = 0;
-    double exp_1;
+    double exp_1 = 0;
+    double exp_2 = 0;
+    double exp_3 = 0;
     for(int i = 0;i < v_1.size();i++){
         sum_1 += v_1[i];
         sum_2 += v_2[i];
     }
+    exp_1 = sum_1 / v_1.size();
+    exp_2 = sum_2 / v_2.size();
     for(int i = 0;i < v_1.size();i++){
+        exp_3 = exp_3 + (v_1[i] - exp_1) * (v_2[i] - exp_2);
     }
+    return exp_3 / v_1.size();
 }

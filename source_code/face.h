@@ -30,7 +30,7 @@ class ShapeRegressor{
 
 class FernCascade{
     private:
-        vector<Fern> primary_fern;
+        vector<Fern> primary_fern_;
     public:
         FernCascade();
         void train();
