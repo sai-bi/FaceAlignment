@@ -18,13 +18,13 @@ void Fern::train(const vector<vector<double> >& pixel_density,
     int pixel_pair_num_in_fern = 5;
     int pixel_pair_num = pixel_density.size();
     int landmark_num = current_shapes[0].rows;
+    RNG random_generator(getTickCount());
     vector<Mat_<double> > delta_shapes(current_shapes.size());
     for(int i = 0;i < current_shapes.size();i++){
         delta_shapes[i] = target_shapes[i] - current_shapes[i];
     }
     Mat_<int> pixel_pair_selected_index(pixel_pair_num_in_fern,2);
     for(int i = 0;i < pixel_pair_num_in_fern;i++){
-        RNG random_generator;
         Mat_<double> random_direction(landmark_num,2);
         random_generator.fill(random_direction,RNG::UNIFORM,-1,1);
         normalize(random_direction,random_direction);
@@ -54,15 +54,63 @@ void Fern::train(const vector<vector<double> >& pixel_density,
         pixel_pair_selected_index(i,0) = max_pixel_pair_index_1;
         pixel_pair_selected_index(i,1) = max_pixel_pair_index_2; 
     }     
-    vector<Mat_<double> > bin_output;
-    vector<int> bin_of_shape;
+    int bin_number = pow(2.0,pixel_pair_num_in_fern);
+    vector<Mat_<double> > bin_output(bin_number);
+    vector<vector<int> > bin_of_shape(bin_number);
+
+    Mat_<double> density_difference_range(pixel_pair_num_in_fern,2);
+    
+    for(int i = 0;i < pixel_pair_num_in_fern;i++){
+        int index1 = pixel_pair_selected_index(i,0);
+        int index2 = pixel_pair_selected_index(i,1);
+        double min_value = numeric_limits<double>::max();
+        double max_value = numeric_limits<double>::min(); 
+        for(int j = 0;j < current_shapes.size();j++){
+            double temp = pixel_density[index1][j] - pixel_density[index2][j];
+            if(temp > max_value){
+                max_value = temp;  
+            }   
+            if(temp < min_value){
+                min_value = temp;
+            }
+        }  
+        density_difference_range(i,0) = min_value;
+        density_difference_range(i,1) = max_value;
+    }
+    Mat_<double> threshold(pixel_pair_num_in_fern,1);
+    for(int i = 0;i < pixel_pair_num_in_fern;i++){
+        double lower_value = 0.7 * density_difference_range(i,0) + 0.3 * density_difference_range(i,1);
+        double upper_value = 0.3 * density_difference_range(i,0) + 0.7 * density_difference_range(i,1); 
+        threshold(i) = random_generator.uniform(lower_value,upper_value);  
+    }
     for(int i = 0;i < current_shapes.size();i++){
+        int bin_index = 0;
         for(int j = 0;j < pixel_pair_num_in_fern;j++){
             int index1 = pixel_pair_selected_index(j,0);
             int index2 = pixel_pair_selected_index(j,1);
-             
+            if(pixel_density[index1][i] - pixel_density[index2][i] >= threshold[j]){
+                bin_index = bin_index + (int)(pow(2.0,j)); 
+            } 
+        }
+        bin_of_shape[bin_index].push_back(i);
+    }    
+    for(int i = 0;i < bin_of_shape.size();i++){
+        Mat_<double> temp = Mat::zeros(landmark_num,2);
+        int bin_size = bin_of_shape[i].size();
+        if(bin_size() == 0){
+            bin_output[i] = temp;
+            continue;
+        }
+        for(int j = 0;j < bin_size;j++){  
+            temp = temp + delta_shapes[bin_of_shape[i][j]];
+        }
+        bin_output[i] = (1.0/((1+1000/bin_size) * bin_size)) * temp;
+        for(int j = 0;j < bin_size;j++){
+            current_shapes[bin_of_shape[i][j]] = current_shapes[bin_of_shape[i][j]]
+                + bin_output[i];
         } 
     }
+
 }
 
 double Fern::calculate_covariance(const vector<double>& v_1, const
