@@ -1,5 +1,5 @@
 /**
- * @author 
+ * @author Bi Sai 
  * @version 2014/03/17
  */
 
@@ -23,6 +23,8 @@ void ShapeRegressor::ShapeRegressor(const Mat_<double>& mean_shape,
     training_num_ = images.size();
     landmark_num_ = target_shapes_[0].rows;
     fern_cascades_.resize(first_level_num_);
+    img_height_ = images_[0].cols;
+    img_width_ = images_[0].rows;
 }
 
 void ShapeRegressor::train(){
@@ -48,3 +50,19 @@ void ShapeRegressor::calcuate_normalized_matrix(vector<Mat_<double> >& normalize
     } 
 }
 
+void ShapeRegressor::read(ifstream& fin){
+    fin>>first_level_num_;
+    for(int i = 0;i < first_level_num_;i++){
+        fern_cascades_[i].read(fin);
+    }  
+}   
+
+void ShapeRegressor::write(ofstream& fout)
+    fout<<first_level_num_<<endl;
+    for(int i = 0;i < first_level_num_;i++){
+        fern_cascades_[i].write(fout);  
+    } 
+}
+
+void ShapeRegressor::predict(const Mat_<uchar>& img, ){
+}

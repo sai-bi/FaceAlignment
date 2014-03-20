@@ -13,6 +13,8 @@ class ShapeRegressor{
         int second_level_num_;
         int pixel_pair_num_;
         int training_num_; 
+        int img_width_;
+        int img_height_;
         
     public:
         ShapeRegressor(const Mat_<double>& mean_shape,

@@ -131,3 +131,45 @@ double Fern::calculate_covariance(const vector<double>& v_1, const
     }
     return exp_3 / v_1.size();
 }
+
+void Fern::read(ifstream& fin){
+    fin>>pixel_pair_num_in_fern_;
+    fin>>landmark_num_;
+    selected_x_.create(pixel_pair_num_in_fern_,2);
+    selected_y_.create(pixel_pair_num_in_fern_,2);
+    nearest_keypoint_index_.create(pixel_pair_num_in_fern_,1);
+    threshold_.create(pixel_pair_num_in_fern_,1);
+    for(int i = 0;i < pixel_pair_num_in_fern_;i++){
+        fin>>selected_x_(i,0)>>selected_y_(i,0)
+           >>selected_x_(i,1)>>selected_y_(i,1);
+        fin>>nearest_keypoint_index_(i);
+        fin>>threshold_(i);
+    } 
+}
+
+void Fern::write(ofstream& fout){
+    fout<<pixel_pair_num_in_fern_<<endl; 
+    fout<<landmark_num_<<endl;
+    for(int i = 0;i < pixel_pair_num_in_fern_;i++){
+        int index1 = pixel_pair_selected_index_(i,0);
+        int index2 = pixel_pair_selected_index_(i,1);
+        fout<<pixel_coordinates_(index1,0)<<" "<<pixel_coordinates_(index1,1)<<" "
+            <<pixel_coordinates_(index2,0)<<" "<<pixel_coordinates_(index2,1)
+            <<endl;
+        fout<<nearest_keypoint_index_(i)<<endl;
+        fout<<threshold(i)<<endl;
+    }
+    for(int i = 0;i < bin_output.size();i++){
+        for(int j = 0;j < bin_output[i].rwos;j++){
+            fout<<bin_output[i](j,0)<<" "<<bin_output[i](j,1)<<endl; 
+        }
+    }
+}
+
+
+void Fern::predict(){  
+}
+
+
+
+

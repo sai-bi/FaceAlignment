@@ -90,3 +90,18 @@ double FernCascade::calculate_covariance(const vector<double>& v_1, const
     }
     return exp_3 / v_1.size();
 }
+
+
+void FernCascade::write(ofstream& fout){
+    fout<<second_level_num_;
+    for(int i = 0;i < second_level_num_;i++){
+        primary_fern_[i].write(fout);
+    }
+}
+
+void FernCascade::read(ifstream& fin){
+    fin>>second_level_num_;
+    for(int i = 0;i < second_level_num_;i++){
+        primary_fern_[i].read(fin);
+    }
+}
