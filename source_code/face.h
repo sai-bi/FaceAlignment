@@ -31,7 +31,8 @@ class ShapeRegressor{
         void load(const char* file_name);
         void save(const char* file_name);
         void train();
-        void predict(const Mat_uchar>& image, Mat_<double>& shape);
+        void predict(const Mat_uchar>& image, Mat_<double>& shape,
+                const Mat_<double>& mean_shape);
 };
 
 class FernCascade{
@@ -48,18 +49,36 @@ class FernCascade{
                 vector<Mat_<double> >& current_shapes,
                 int second_level_num,
                 vector<Mat_<double> >& normalized_targets);
-        void predict(const Mat_<uchar>& image, Mat_<double>& shape);
+        void predict(const Mat_<uchar>& image, Mat_<double>& shape,
+                     const Mat_<double>& mean_shape);
         void write(ofstream& fout);
         void read(ifstream& fin);        
 };
 
 class Fern{
     private:
-
+        int pixel_pair_num_in_fern_;
+        int landmark_num_;
+        Mat_<int> nearest_keypoint_index_;
+        Mat_<double> threshold_;
+        Mat_<double> selected_x_;
+        Mat_<double> selected_y_;
+        vector<Mat_<double> > bin_output_;
+        Mat_<int> pixel_pair_selected_index_;
     public:
         Fern();
-        void train();
-        void predict();
+        void train(const vector<vector<double> >& pixel_density,
+                   const Mat_<double>& covariance,
+                   const Mat_<double>& pixel_coordinates,
+                   const Mat_<int>& nearest_keypoint_index,
+                   vector<Mat_<double> >& current_shapes,
+                   int pixel_pair_num_in_fern,
+                   vector<Mat_<double> >& normalized_targets,
+                   const vector<Mat_<double> >& invert_normalized_matrix);
+        void predict(const Mat_<uchar>& image, Mat_<double>& shape,
+                     const Mat_<double>& invert_normalized_matrix);
+        void write(ofstream& fout);
+        void read(ifstream& fin);
 
 };
 

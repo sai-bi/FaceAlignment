@@ -8,29 +8,40 @@
 Fern::Fern(){
 
 }
-
+/**
+ * Train a fern.
+ * @param pixel_density Each vector stores a vector of pixel density in
+ * corresponding position of each image.
+ * @param covariance covariance between pixels
+ * @param nearest_keypoint_index for each pixel, the index of its nearest
+ * keypoint
+ * @param pixel_pair_in_fern number of pixel pairs in a fern
+ * @param normalized_targets (target - current) * normalize_matrix
+ * @param invert_normalized_matrix inverse of normalize_matrix
+ */
 void Fern::train(const vector<vector<double> >& pixel_density,
                  const Mat_<double>& covariance,
                  const Mat_<double>& pixel_coordinates,
                  const Mat_<int>& nearest_keypoint_index,
                  vector<Mat_<double> >& current_shapes,
-                 const vector<Mat_<double> >& target_shapes){
-    int pixel_pair_num_in_fern = 5;
+                 int pixel_pair_num_in_fern,
+                 vector<Mat_<double> >& normalized_targets,
+                 const vector<Mat_<double> >& invert_normalized_matrix){
+    this.pixel_pair_num_in_fern_ = pixel_pair_num_in_fern;
+    nearest_keypoint_index_ = nearest_keypoint_index.clone();
     int pixel_pair_num = pixel_density.size();
     int landmark_num = current_shapes[0].rows;
+    this.landmark_num_ = landmark_num;
     RNG random_generator(getTickCount());
-    vector<Mat_<double> > delta_shapes(current_shapes.size());
-    for(int i = 0;i < current_shapes.size();i++){
-        delta_shapes[i] = target_shapes[i] - current_shapes[i];
-    }
-    Mat_<int> pixel_pair_selected_index(pixel_pair_num_in_fern,2);
+    pixel_pair_selected_index_.create(pixel_pair_in_fern,2);
     for(int i = 0;i < pixel_pair_num_in_fern;i++){
         Mat_<double> random_direction(landmark_num,2);
         random_generator.fill(random_direction,RNG::UNIFORM,-1,1);
         normalize(random_direction,random_direction);
         vector<double> project_result;
-        for(int j = 0;j < delta_shapes.size();j++){
-            Mat temp = random_direction.mul(delta_shapes[j]);
+        
+        for(int j = 0;j < normalized_targets.size();i++){
+            Mat temp = random_direction.mul(normalized_targets[j]);
             project_result.push_back(sum(temp));
         }
         Mat_<double> covariance_pixel_shape(pixel_pair_num,1);
@@ -51,18 +62,18 @@ void Fern::train(const vector<vector<double> >& pixel_density,
                 } 
             }
         } 
-        pixel_pair_selected_index(i,0) = max_pixel_pair_index_1;
-        pixel_pair_selected_index(i,1) = max_pixel_pair_index_2; 
+        pixel_pair_selected_index_(i,0) = max_pixel_pair_index_1;
+        pixel_pair_selected_index_(i,1) = max_pixel_pair_index_2; 
     }     
     int bin_number = pow(2.0,pixel_pair_num_in_fern);
-    vector<Mat_<double> > bin_output(bin_number);
+    bin_output_.resize(bin_number);
     vector<vector<int> > bin_of_shape(bin_number);
 
     Mat_<double> density_difference_range(pixel_pair_num_in_fern,2);
     
     for(int i = 0;i < pixel_pair_num_in_fern;i++){
-        int index1 = pixel_pair_selected_index(i,0);
-        int index2 = pixel_pair_selected_index(i,1);
+        int index1 = pixel_pair_selected_index_(i,0);
+        int index2 = pixel_pair_selected_index_(i,1);
         double min_value = numeric_limits<double>::max();
         double max_value = numeric_limits<double>::min(); 
         for(int j = 0;j < current_shapes.size();j++){
@@ -86,8 +97,8 @@ void Fern::train(const vector<vector<double> >& pixel_density,
     for(int i = 0;i < current_shapes.size();i++){
         int bin_index = 0;
         for(int j = 0;j < pixel_pair_num_in_fern;j++){
-            int index1 = pixel_pair_selected_index(j,0);
-            int index2 = pixel_pair_selected_index(j,1);
+            int index1 = pixel_pair_selected_index_(j,0);
+            int index2 = pixel_pair_selected_index_(j,1);
             if(pixel_density[index1][i] - pixel_density[index2][i] >= threshold[j]){
                 bin_index = bin_index + (int)(pow(2.0,j)); 
             } 
@@ -98,19 +109,20 @@ void Fern::train(const vector<vector<double> >& pixel_density,
         Mat_<double> temp = Mat::zeros(landmark_num,2);
         int bin_size = bin_of_shape[i].size();
         if(bin_size() == 0){
-            bin_output[i] = temp;
+            bin_output_[i] = temp;
             continue;
         }
         for(int j = 0;j < bin_size;j++){  
-            temp = temp + delta_shapes[bin_of_shape[i][j]];
+            temp = temp + normalized_targets[bin_of_shape[i][j]];
         }
         bin_output[i] = (1.0/((1+1000/bin_size) * bin_size)) * temp;
         for(int j = 0;j < bin_size;j++){
-            current_shapes[bin_of_shape[i][j]] = current_shapes[bin_of_shape[i][j]]
-                + bin_output[i];
+            int index = bin_of_shape[i][j];
+            current_shapes[index] = current_shapes[index] + bin_output_[i]
+                * invert_normalized_matrix[index];
+            normalized_targets[index] = normalized_targets[index] - bin_output_[i];
         } 
     }
-
 }
 
 
@@ -134,7 +146,7 @@ void Fern::read(ifstream& fin){
         double y = 0;
         Mat_<double> temp(landmark_num_,2);
         for(int j = 0;j < landmark_num_;j++){
-            cin>>x>>y.
+            fin>>x>>y.
             temp(j,0) = x;
             temp(j,1) = y;    
         } 
@@ -152,18 +164,43 @@ void Fern::write(ofstream& fout){
             <<pixel_coordinates_(index2,0)<<" "<<pixel_coordinates_(index2,1)
             <<endl;
         fout<<nearest_keypoint_index_(i)<<endl;
-        fout<<threshold(i)<<endl;
+        fout<<threshold_(i)<<endl;
     }
-    for(int i = 0;i < bin_output.size();i++){
-        for(int j = 0;j < bin_output[i].rwos;j++){
-            fout<<bin_output[i](j,0)<<" "<<bin_output[i](j,1)<<endl; 
+    for(int i = 0;i < bin_output_.size();i++){
+        for(int j = 0;j < bin_output_[i].rwos;j++){
+            fout<<bin_output_[i](j,0)<<" "<<bin_output_[i](j,1)<<endl; 
         }
     }
 }
 
 
-void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape){  
-     
+void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape,
+                   const Mat_<double>& invert_normalized_matrix){  
+    int bin_index = 0;
+    for(int i = 0;i < pixel_pair_num_in_fern_;i++){
+        int keypoint_index = nearest_keypoint_index(i);
+        Mat_<double> coordinates(1,2);
+        Mat_<double> pixel_1;
+        Mat_<double> pixel_2;
+        coordinates(0,0) = selected_x_(i,0);
+        coordinates(0,1) = selected_y_(i,0);
+        pixel_1 = coordinates * invert_normalized_matrix;
+        pixel_1(0,0) += shape(keypoint_index,0);
+        pixel_1(0,1) += shape(keypoint_index,1);
+         
+        coordinates(0,0) = selected_x_(i,1);
+        coordinates(0,1) = selected_y_(i,1); 
+        pixel_2 = coordinates * invert_normalized_matrix;
+        pixel_2(0,0) += shape(keypoint_index,0);
+        pixel_2(0,1) += shape(keypoint_index,1);  
+        
+        double intensity_1 = image((int)(pixel_1(0,1)),(int)(pixel_1(0,0)));
+        double intensity_2 = image((int)(pixel_2(0,1)),(int)(pixel_2(0,0))); 
+        if(intensity_1 - intensity_2 >= threshold_(i)){
+            bin_index = bin_index + (int)(pow(2.0,i));
+        }
+    } 
+    shape = shape + bin_output_[bin_index] * invert_normalized_matrix;
 }
 
 

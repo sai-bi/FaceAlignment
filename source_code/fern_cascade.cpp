@@ -27,7 +27,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
                         int second_level_num,
                         vector<Mat_<double> >& current_shapes,
                         int pixel_pair_num,
-                        vector<Mat_<double> >& normalized_targets){
+                        vector<Mat_<double> >& normalized_targets,
+                        int pixel_pair_in_fern){
     this.second_level_num_ = second_level_num;
     Mat_<double> pixel_coordinates(pixel_pair_num,2);
     Mat_<int> nearest_keypoint_index(pixel_pair_num,1);
@@ -82,7 +83,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     }
     primary_fern_.resize(second_level_num);
     for(int i = 0;i < second_level_num;i++){
-        primary_fern_[i].train(pixel_density,correlation,pixel_coordinates,nearest_keypoint_index, current_shapes,target_shapes); 
+        primary_fern_[i].train(pixel_density,correlation,pixel_coordinates,nearest_keypoint_index, current_shapes,target_shapes,
+                pixel_pair_in_fern, normalized_targets,invert_normalized_matrix); 
     }
 }
 
@@ -99,9 +101,14 @@ void FernCascade::read(ifstream& fin){
         primary_fern_[i].read(fin);
     }
 }
-void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape){
+void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape,const Mat_<double>& mean_shape){
+    Mat_<double> normalize_matrix;
+    Mat_<double> invert_normalized_matrix;
+    solve(shape,mean_shape,normalize_matrix,DECOMP_SVD);
+    invert(normalize_matrix,invert_normalized_matrix,DECOMP_SVD);
+
     for(int i = 0;i < second_level_num_;i++){
-        primary_fern_[i].predict(image,shape);
+        primary_fern_[i].predict(image,shape,invert_normalized_matrix);
     }
 }
 
