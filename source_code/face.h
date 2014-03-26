@@ -23,7 +23,7 @@ class ShapeRegressor{
         ShapeRegressor(const Mat_<double>& mean_shape,
                        const vector<Mat_<uchar> >& images,
                        const vector<Mat_<double> >& target_shapes,
-                       const vector<Mat_<double> >& current_shapes,
+                       vector<Mat_<double> >& current_shapes,
                        int first_level_num,
                        int second_level_num,
                        int pixel_pair_num,
@@ -101,8 +101,6 @@ double calculate_covariance(const vector<double>& v_1, const
     }
     return exp_3 / v_1.size();
 };
-
-
 
 
 #endif
