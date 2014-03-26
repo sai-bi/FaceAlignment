@@ -113,24 +113,7 @@ void Fern::train(const vector<vector<double> >& pixel_density,
 
 }
 
-double Fern::calculate_covariance(const vector<double>& v_1, const
-        vector<double>& v_2){
-    double sum_1 = 0;
-    double sum_2 = 0;
-    double exp_1 = 0;
-    double exp_2 = 0;
-    double exp_3 = 0;
-    for(int i = 0;i < v_1.size();i++){
-        sum_1 += v_1[i];
-        sum_2 += v_2[i];
-    }
-    exp_1 = sum_1 / v_1.size();
-    exp_2 = sum_2 / v_2.size();
-    for(int i = 0;i < v_1.size();i++){
-        exp_3 = exp_3 + (v_1[i] - exp_1) * (v_2[i] - exp_2);
-    }
-    return exp_3 / v_1.size();
-}
+
 
 void Fern::read(ifstream& fin){
     fin>>pixel_pair_num_in_fern_;
@@ -144,7 +127,19 @@ void Fern::read(ifstream& fin){
            >>selected_x_(i,1)>>selected_y_(i,1);
         fin>>nearest_keypoint_index_(i);
         fin>>threshold_(i);
-    } 
+    }
+    int bin_num = pow(2.0,pixel_pair_num_in_fern_);
+    for(int i = 0;i < bin_num;i++){
+        double x = 0;
+        double y = 0;
+        Mat_<double> temp(landmark_num_,2);
+        for(int j = 0;j < landmark_num_;j++){
+            cin>>x>>y.
+            temp(j,0) = x;
+            temp(j,1) = y;    
+        } 
+        bin_output_.push_back(temp); 
+    }  
 }
 
 void Fern::write(ofstream& fout){
@@ -167,7 +162,8 @@ void Fern::write(ofstream& fout){
 }
 
 
-void Fern::predict(){  
+void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape){  
+     
 }
 
 

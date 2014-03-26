@@ -9,21 +9,35 @@ FernCascade::FernCascade(){
      
 }
 
-
+/**
+ * Train a fern cascade.
+ * @param images training images in gray scale
+ * @param normalize_matrix similarity matrix
+ * @param target_shapes target shapes of each face image
+ * @param mean_shape mean shape
+ * @param second_level_num level number for second level regression 
+ * @param current_shapes current shapes of training images
+ * @param pixel_pair_num number of pair of pixels to be selected
+ * @param normalized_targets (target - current) * normalize_matrix
+ */
 void FernCascade::train(const vector<Mat_<uchar> >& images,
                         const vector<Mat_<double> >& normalize_matrix,
                         const vector<Mat_<double> >& target_shapes,
-                        const vector<Mat_<double> >& mean_shape,
+                        const Mat_<double>& mean_shape,
                         int second_level_num,
                         vector<Mat_<double> >& current_shapes,
                         int pixel_pair_num,
                         vector<Mat_<double> >& normalized_targets){
+    this.second_level_num_ = second_level_num;
     Mat_<double> pixel_coordinates(pixel_pair_num,2);
     Mat_<int> nearest_keypoint_index(pixel_pair_num,1);
     RNG random_generator(getTickCount());
     primary_fern.resize(second_level_num);
     int landmark_num = mean_shape.rows;   
     int training_num = images.size();
+    int image_width = images[0].cols;
+    int image_height = images[0].rows;
+    // generate local coordinates
     for(int i = 0;i < pixel_pair_num;i++){
         int x_coordinates = random_generator.uniform(-20,20);
         int y_coordinates = random_generator.uniform(-20,20);
@@ -53,6 +67,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
             global_coordinates(0,1) += current_shapes[j](index,1);
             int temp_x = global_coordinates(0,0);
             int temp_y = global_coordinates(0,1);   
+            assert(temp_x>=0 && temp_y>=0 && 
+                   temp_x< image_width && temp_y < image_height);
             curr_pair_pixel_density.push_back(int(images[j](temp_y,temp_x)));
         }
     }
@@ -66,29 +82,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     }
     primary_fern_.resize(second_level_num);
     for(int i = 0;i < second_level_num;i++){
-        primary_fern_[i].train(pixel_density,correlation,pixel_coordinates,nearest_keypoint_index,
-                               current_shapes,target_shapes); 
+        primary_fern_[i].train(pixel_density,correlation,pixel_coordinates,nearest_keypoint_index, current_shapes,target_shapes); 
     }
-}
-
-
-double FernCascade::calculate_covariance(const vector<double>& v_1, const
-        vector<double>& v_2){
-    double sum_1 = 0;
-    double sum_2 = 0;
-    double exp_1 = 0;
-    double exp_2 = 0;
-    double exp_3 = 0;
-    for(int i = 0;i < v_1.size();i++){
-        sum_1 += v_1[i];
-        sum_2 += v_2[i];
-    }
-    exp_1 = sum_1 / v_1.size();
-    exp_2 = sum_2 / v_2.size();
-    for(int i = 0;i < v_1.size();i++){
-        exp_3 = exp_3 + (v_1[i] - exp_1) * (v_2[i] - exp_2);
-    }
-    return exp_3 / v_1.size();
 }
 
 
@@ -98,10 +93,15 @@ void FernCascade::write(ofstream& fout){
         primary_fern_[i].write(fout);
     }
 }
-
 void FernCascade::read(ifstream& fin){
     fin>>second_level_num_;
     for(int i = 0;i < second_level_num_;i++){
         primary_fern_[i].read(fin);
     }
 }
+void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape){
+    for(int i = 0;i < second_level_num_;i++){
+        primary_fern_[i].predict(image,shape);
+    }
+}
+
