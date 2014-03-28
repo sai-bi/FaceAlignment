@@ -2,8 +2,6 @@
  * @author Bi Sai 
  * @version 2014/03/26
  */
-
-
 #include "face.h"
 using namespace std;
 void train(const vector<string>& image_path,
