@@ -24,7 +24,7 @@ void train(const vector<Mat_<uchar> >& input_images,
             augment_target_shapes.push_back(target_shapes[i]);
             int index = 0;
             do{
-                index = random_generator.uniform(0,image_path.size()); 
+                index = random_generator.uniform(0,input_images.size()); 
             }while(index == i);
             augment_current_shapes.push_back(target_shapes[index]);
         }
@@ -80,7 +80,7 @@ double calculate_covariance(const vector<double>& v_1, const
         exp_3 = exp_3 + (v_1[i] - exp_1) * (v_2[i] - exp_2);
     }
     return exp_3 / v_1.size();
-};
+}
 
 
 

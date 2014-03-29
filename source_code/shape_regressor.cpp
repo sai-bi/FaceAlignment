@@ -5,6 +5,9 @@
 
 #include "face.h"
 
+ShapeRegressor::ShapeRegressor(){
+
+}
 /**
  * Constructors
  * @param mean_shape mean shapes 
@@ -16,15 +19,14 @@
  * @param pixel_pair_num pixel pair number to be selected in first level 
  * @param pixel_pair_in_fern pixel pair number in each primary fern regressor
  */
-void ShapeRegressor::ShapeRegressor(const Mat_<double>& mean_shape,
+ShapeRegressor::ShapeRegressor(const Mat_<double>& mean_shape,
                        const vector<Mat_<uchar> >& images,
                        const vector<Mat_<double> >& target_shapes,
-                       vector<Mat_<double> > current_shapes,
+                       vector<Mat_<double> >& current_shapes,
                        int first_level_num,
                        int second_level_num,
                        int pixel_pair_num,
                        int pixel_pair_in_fern){
-
     mean_shape_ = mean_shape;
     images_ = images;
     target_shapes_ = target_shapes;
@@ -44,7 +46,7 @@ void ShapeRegressor::ShapeRegressor(const Mat_<double>& mean_shape,
  * Training function
  */
 void ShapeRegressor::train(){
-    for(int i = 0;i < first_level_num;i++){
+    for(int i = 0;i < first_level_num_;i++){
         vector<Mat_<double> > normalize_matrix;
         calcuate_normalized_matrix(normalize_matrix);
         vector<Mat_<double> > normalized_targets(training_num_);
@@ -52,8 +54,9 @@ void ShapeRegressor::train(){
             normalized_targets[j] = (target_shapes_[j] - current_shapes_[j]) * 
                 normalize_matrix[j];
         }
-        fern_cascades_[i].train(images_,normalize_matrix,target_shapes_,mean_shape,
-                second_level_num_,current_shapes_,pixel_pair_num_,normalized_targets); 
+        fern_cascades_[i].train(images_,normalize_matrix,target_shapes_,mean_shape_,
+                second_level_num_,current_shapes_,pixel_pair_num_,normalized_targets,
+                pixel_pair_in_fern_); 
     }   
 }
 
@@ -85,7 +88,7 @@ void ShapeRegressor::read(ifstream& fin){
  * Write training model to file
  * @param fout file operator
  */
-void ShapeRegressor::write(ofstream& fout)
+void ShapeRegressor::write(ofstream& fout){
     fout<<first_level_num_<<endl;
     for(int i = 0;i < first_level_num_;i++){
         fern_cascades_[i].write(fout);  
@@ -110,7 +113,7 @@ void ShapeRegressor::predict(const Mat_<uchar>& image, Mat_<double>& shape, cons
 void ShapeRegressor::load(const char* file_name){
     ifstream fin;
     fin.open(file_name);
-    this.read(fin);
+    read(fin);
     fin.close();
 }
 
@@ -121,7 +124,7 @@ void ShapeRegressor::load(const char* file_name){
 void ShapeRegressor::save(const char* file_name){
     ofstream fout;
     fout.open(file_name);
-    this.write(fout);
+    write(fout);
     fout.close();
 }
 

@@ -57,7 +57,7 @@ int main(){
         target_shapes.push_back(temp);
     }  
      
-    mean_shape = 1.0/(image_name) * mean_shape;
+    mean_shape = 1.0/(img_num) * mean_shape;
 
     train(images,target_shapes,mean_shape,10,pixel_pair_num,
             pixel_pair_in_fern,first_level_num,second_level_num);

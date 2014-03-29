@@ -29,11 +29,11 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
                         int pixel_pair_num,
                         vector<Mat_<double> >& normalized_targets,
                         int pixel_pair_in_fern){
-    this.second_level_num_ = second_level_num;
+    second_level_num_ = second_level_num;
     Mat_<double> pixel_coordinates(pixel_pair_num,2);
     Mat_<int> nearest_keypoint_index(pixel_pair_num,1);
     RNG random_generator(getTickCount());
-    primary_fern.resize(second_level_num);
+    primary_fern_.resize(second_level_num);
     int landmark_num = mean_shape.rows;   
     int training_num = images.size();
     int image_width = images[0].cols;
@@ -43,8 +43,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         int x_coordinates = random_generator.uniform(-20,20);
         int y_coordinates = random_generator.uniform(-20,20);
         int index = random_generator.uniform(0,landmark_num);
-        pixel_coordinates(i,0) = x;
-        pixel_coordinates(i,1) = y; 
+        pixel_coordinates(i,0) = x_coordinates;
+        pixel_coordinates(i,1) = y_coordinates; 
         nearest_keypoint_index(i) = index;
     }
     vector<Mat_<double> > inverse_normalize_matrix;
@@ -76,15 +76,14 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     Mat_<double> correlation(pixel_pair_num,pixel_pair_num);
     for(int i = 0;i < pixel_pair_num;i++){
         for(int j = i;j< pixel_pair_num;j++){
-            double correlation_result = calculate_correlation(pixel_density[i],pixel_density[j]);
+            double correlation_result = calculate_covariance(pixel_density[i],pixel_density[j]);
             correlation(i,j) = correlation_result;
             correlation(j,i) = correlation_result;
         }
     }
     primary_fern_.resize(second_level_num);
     for(int i = 0;i < second_level_num;i++){
-        primary_fern_[i].train(pixel_density,correlation,pixel_coordinates,nearest_keypoint_index, current_shapes,target_shapes,
-                pixel_pair_in_fern, normalized_targets,invert_normalized_matrix); 
+        primary_fern_[i].train(pixel_density,correlation,pixel_coordinates,nearest_keypoint_index, current_shapes,pixel_pair_in_fern, normalized_targets,inverse_normalize_matrix); 
     }
 }
 
