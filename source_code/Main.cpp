@@ -3,82 +3,67 @@
  * @version 2014/03/26
  */
 #include "face.h"
-using namespace std;
-void train(const vector<string>& image_path,
-                 const vector<Mat_<double> >& target_shapes,
-                 const Mat_<double>& mean_shape,
-                 int initial_number,
-                 int pixel_pair_num,
-                 int pixel_pair_in_fern,
-                 int first_level_num,
-                 int second_level_num);
-
-Mat_<double> test(string image_path, const vector<Mat_<double> > target_shapes,
-        const Mat_<double>& mean_shape,
-        int initial_number);
 
 int main(){
-    
-}
+    int img_num = 719;
+    int pixel_pair_num = 400;
+    int pixel_pair_in_fern = 5;
+    int first_level_num = 10;
+    int second_level_num = 500; 
+    int landmark_num = 35;
+    int initial_number = 10;
 
-void train(const vector<string>& image_path,
-                 const vector<Mat_<double> >& target_shapes,
-                 const Mat_<double>& mean_shape,
-                 int initial_number,
-                 int pixel_pair_num,
-                 int pixel_pair_in_fern,
-                 int first_level_num,
-                 int second_level_num){
+
     vector<Mat_<uchar> > images;
-    vector<Mat_<double> > augment_target_shapes;
-    vector<Mat_<double> > augment_current_shapes; 
-    RNG random_generator(getTickCount());
-    for(int i = 0;i < image_path.size();i++){
-        Mat_<uchar> temp = imread(image_path[i],0);
-        for(int j = 0;j < initial_number;j++){
-            images.push_back(temp);
-            augment_target_shapes.push_back(target_shapes[i]);
-            int index = 0;
-            do{
-                index = random_generator.uniform(0,image_path.size()); 
-            }while(index == i);
-            augment_current_shapes.push_back(target_shapes[index]);
-        }
+    int average_height = 0;
+    int average_width = 0;
+    for(int i = 0;i < img_num;i++){
+        string image_name = "./../data/LFPW/lfpwFaces/";
+        image_name = image_name + to_string(i+1) + ".jpg";
+        Mat_<uchar> temp = imread(image_name,0);
+        images.push_back(temp);
+        average_height = average_height + temp.rows;
+        average_width = average_width + temp.cols;
     }
     
-    ShapeRegressor regressor(mean_shape,images,augment_target_shapes,
-                augment_current_shapes,first_level_num,
-                second_level_num, pixel_pair_num,
-                pixel_pair_in_fern);
-    regressor.train();
-    regressor.save("model.data");
-}
+    average_height = average_height / img_num;
+    average_width  =average_width / img_num;
 
-Mat_<double> test(string image_path, const vector<Mat_<double> > target_shapes,
-        const Mat_<double>& mean_shape,
-        int initial_number){
-    ShapeRegressor regressor;
-    regressor.load("model.data");
-    RNG random_generator(getTickCount()); 
-    Mat_<uchar> image = imread(image_path,0);
-    Mat_<double> combine_shape;
-    for(int i = 0;i < initial_number;i++){
-        int index = 0;
-        do{
-            index = random_generator.uniform(0,target_shapes.size());  
-        }while(index == i);
-        Mat_<double> shape = target_shapes[index].clone();
-        regressor.predict(image,shape,mean_shape);
-        if(i == 0){
-            combine_shape = shape.clone();
-        }else{
-            combine_shape = combine_shape + shape;
-        }
+    ifstream fin;
+    fin.open("./../data/LFPW/keypointsInfor.txt"); 
+    double start_x;
+    double start_y;
+    double curr_width;
+    double curr_height;
+    Mat_<double> mean_shape(landmark_num,2);
+    vector<Mat_<double> > target_shapes;
+    for(int i = 0;i < landmark_num;i++){
+        mean_shape(i,0) = 0;
+        mean_shape(i,1) = 0;
     }
-    return combine_shape; 
+    while(fin>>start_x>>start_y>>curr_width>>curr_height){
+        Mat_<double> temp(landmark_num,2);
+        double keypoint_x;
+        double keypoint_y;
+        for(int i = 0;i < 35;i++){
+            fin>>keypoint_x>>keypoint_y;
+            keypoint_x = keypoint_x * average_width / curr_width;
+            keypoint_y = keypoint_y * average_height / curr_height;
+            temp(i,0) = keypoint_x;
+            temp(i,1) = keypoint_y;
+            mean_shape(i,0) += keypoint_x;
+            mean_shape(i,1) += keypoint_y;
+        }
+        target_shapes.push_back(temp);
+    }  
+     
+    mean_shape = 1.0/(image_name) * mean_shape;
+
+    train(images,target_shapes,mean_shape,10,pixel_pair_num,
+            pixel_pair_in_fern,first_level_num,second_level_num);
+    
+    return 0;
 }
-
-
 
 
 

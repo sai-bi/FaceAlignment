@@ -84,23 +84,21 @@ class Fern{
 
 
 double calculate_covariance(const vector<double>& v_1, const
-        vector<double>& v_2){
-    double sum_1 = 0;
-    double sum_2 = 0;
-    double exp_1 = 0;
-    double exp_2 = 0;
-    double exp_3 = 0;
-    for(int i = 0;i < v_1.size();i++){
-        sum_1 += v_1[i];
-        sum_2 += v_2[i];
-    }
-    exp_1 = sum_1 / v_1.size();
-    exp_2 = sum_2 / v_2.size();
-    for(int i = 0;i < v_1.size();i++){
-        exp_3 = exp_3 + (v_1[i] - exp_1) * (v_2[i] - exp_2);
-    }
-    return exp_3 / v_1.size();
-};
+        vector<double>& v_2);
+
+void train(const vector<string>& image_path,
+                 const vector<Mat_<double> >& target_shapes,
+                 const Mat_<double>& mean_shape,
+                 int initial_number,
+                 int pixel_pair_num,
+                 int pixel_pair_in_fern,
+                 int first_level_num,
+                 int second_level_num);
+
+Mat_<double> test(string image_path, const vector<Mat_<double> > target_shapes,
+        const Mat_<double>& mean_shape,
+        int initial_number);
+
 
 
 #endif
