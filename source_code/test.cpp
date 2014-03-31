@@ -1,7 +1,8 @@
 /**
- * @author Bi Sai 
- * @version 2014/03/26
+ * @author 
+ * @version 2014/03/31
  */
+
 #include "face.h"
 
 int main(){
@@ -65,15 +66,9 @@ int main(){
     }  
 
     mean_shape = 1.0/(img_num) * mean_shape;
-    //cout<<"Start training..."<<endl;
 	
-	/*
-	train(images,target_shapes,mean_shape,initial_number,pixel_pair_num,
-			pixel_pair_in_fern,first_level_num,second_level_num);
-	*/
-	
-	// for testing
-	Mat_<uchar> test_image = imread("C:\\Users\\BiSai\\Documents\\code\\LFPW\\lfpwFaces\\10.jpg",0);
+    
+    Mat_<uchar> test_image = imread("./../data/LFPW/lfpwFaces/10.jpg",0);
 	resize(test_image,test_image,Size(average_width,average_height));
 	Mat_<double> current_shape = test(test_image,target_shapes,mean_shape,1);
 	for(int i = 0;i < landmark_num;i++){
@@ -83,20 +78,5 @@ int main(){
 	waitKey(0);
 
     return 0;
+    
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

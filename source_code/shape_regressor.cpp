@@ -20,13 +20,13 @@ ShapeRegressor::ShapeRegressor(){
  * @param pixel_pair_in_fern pixel pair number in each primary fern regressor
  */
 ShapeRegressor::ShapeRegressor(const Mat_<double>& mean_shape,
-                       const vector<Mat_<uchar> >& images,
-                       const vector<Mat_<double> >& target_shapes,
-                       vector<Mat_<double> >& current_shapes,
-                       int first_level_num,
-                       int second_level_num,
-                       int pixel_pair_num,
-                       int pixel_pair_in_fern){
+        const vector<Mat_<uchar> >& images,
+        const vector<Mat_<double> >& target_shapes,
+        vector<Mat_<double> >& current_shapes,
+        int first_level_num,
+        int second_level_num,
+        int pixel_pair_num,
+        int pixel_pair_in_fern){
     mean_shape_ = mean_shape;
     images_ = images;
     target_shapes_ = target_shapes;
@@ -46,9 +46,12 @@ ShapeRegressor::ShapeRegressor(const Mat_<double>& mean_shape,
  * Training function
  */
 void ShapeRegressor::train(){
+    cout<<"ShapeRegressor train..."<<endl;
     for(int i = 0;i < first_level_num_;i++){
         vector<Mat_<double> > normalize_matrix;
+        // calculate normalized matrix
         calcuate_normalized_matrix(normalize_matrix);
+        // normalize targets = (target - current) * normalize_matrix;
         vector<Mat_<double> > normalized_targets(training_num_);
         for(int j = 0;j < training_num_;j++){
             normalized_targets[j] = (target_shapes_[j] - current_shapes_[j]) * 
@@ -79,6 +82,7 @@ void ShapeRegressor::calcuate_normalized_matrix(vector<Mat_<double> >& normalize
  */
 void ShapeRegressor::read(ifstream& fin){
     fin>>first_level_num_;
+    fern_cascades_.resize(first_level_num_);
     for(int i = 0;i < first_level_num_;i++){
         fern_cascades_[i].read(fin);
     }  

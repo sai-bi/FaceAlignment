@@ -6,13 +6,14 @@
 #include "face.h"
 
 void train(const vector<Mat_<uchar> >& input_images,                  
-                const vector<Mat_<double> >& target_shapes,
-                 const Mat_<double>& mean_shape,
-                 int initial_number,
-                 int pixel_pair_num,
-                 int pixel_pair_in_fern,
-                 int first_level_num,
-                 int second_level_num){
+        const vector<Mat_<double> >& target_shapes,
+        const Mat_<double>& mean_shape,
+        int initial_number,
+        int pixel_pair_num,
+        int pixel_pair_in_fern,
+        int first_level_num,
+        int second_level_num){
+    cout<<"Start training..."<<endl;
     vector<Mat_<double> > augment_target_shapes;
     vector<Mat_<uchar> > images; 
     vector<Mat_<double> > augment_current_shapes; 
@@ -29,22 +30,24 @@ void train(const vector<Mat_<uchar> >& input_images,
             augment_current_shapes.push_back(target_shapes[index]);
         }
     }
-    
+
     ShapeRegressor regressor(mean_shape,images,augment_target_shapes,
-                augment_current_shapes,first_level_num,
-                second_level_num, pixel_pair_num,
-                pixel_pair_in_fern);
+            augment_current_shapes,first_level_num,
+            second_level_num, pixel_pair_num,
+            pixel_pair_in_fern);
     regressor.train();
-    regressor.save("model.data");
+    regressor.save("./data/model.data");
 }
 
-Mat_<double> test(string image_path, const vector<Mat_<double> > target_shapes,
+Mat_<double> test(const Mat_<uchar>& image, const vector<Mat_<double> > target_shapes,
         const Mat_<double>& mean_shape,
         int initial_number){
     ShapeRegressor regressor;
-    regressor.load("model.data");
-    RNG random_generator(getTickCount()); 
-    Mat_<uchar> image = imread(image_path,0);
+	cout<<"Load model..."<<endl;
+    regressor.load("./data/model.data");
+    cout<<"Model loaded..."<<endl;
+	RNG random_generator(getTickCount()); 
+    //Mat_<uchar> image = imread(image_path,0);
     Mat_<double> combine_shape;
     for(int i = 0;i < initial_number;i++){
         int index = 0;
@@ -62,9 +65,12 @@ Mat_<double> test(string image_path, const vector<Mat_<double> > target_shapes,
     return combine_shape; 
 }
 
-
+// calculate the covariance of two vectors
+// cov(x,y) = E((x - E(x)*(y-E(y))
 double calculate_covariance(const vector<double>& v_1, const
         vector<double>& v_2){
+    assert(v_1.size() == v_2.size());
+    assert(v_1.size() != 0);
     double sum_1 = 0;
     double sum_2 = 0;
     double exp_1 = 0;
