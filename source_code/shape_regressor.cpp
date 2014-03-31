@@ -48,6 +48,7 @@ ShapeRegressor::ShapeRegressor(const Mat_<double>& mean_shape,
 void ShapeRegressor::train(){
     cout<<"ShapeRegressor train..."<<endl;
     for(int i = 0;i < first_level_num_;i++){
+        cout<<i<<" ";
         vector<Mat_<double> > normalize_matrix;
         // calculate normalized matrix
         calcuate_normalized_matrix(normalize_matrix);

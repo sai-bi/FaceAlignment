@@ -36,18 +36,13 @@ void train(const vector<Mat_<uchar> >& input_images,
             second_level_num, pixel_pair_num,
             pixel_pair_in_fern);
     regressor.train();
-    regressor.save("./data/model.data");
+    regressor.save("./data/model.txt");
 }
 
-Mat_<double> test(const Mat_<uchar>& image, const vector<Mat_<double> > target_shapes,
+Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vector<Mat_<double> > target_shapes,
         const Mat_<double>& mean_shape,
         int initial_number){
-    ShapeRegressor regressor;
-	cout<<"Load model..."<<endl;
-    regressor.load("./data/model.data");
-    cout<<"Model loaded..."<<endl;
-	RNG random_generator(getTickCount()); 
-    //Mat_<uchar> image = imread(image_path,0);
+    RNG random_generator(getTickCount()); 
     Mat_<double> combine_shape;
     for(int i = 0;i < initial_number;i++){
         int index = 0;
@@ -89,4 +84,11 @@ double calculate_covariance(const vector<double>& v_1, const
 }
 
 
-
+void show_image(const Mat_<uchar>& input_image, const Mat_<double>&  points){
+    Mat_<uchar> image = input_image.clone();
+    for(int i = 0;i < points.rows;i++){
+        circle(image,Point2d(points(i,0),points(i,1)),3,Scalar(255,0,0),-1,8,0); 
+    }
+    imshow("image",image);
+    waitKey(5);
+}

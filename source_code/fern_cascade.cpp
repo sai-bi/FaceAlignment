@@ -67,8 +67,7 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         vector<double> curr_pair_pixel_density;
         for(int j = 0;j < training_num;j++){
 			// project the coordinates back into original system
-            Mat_<double> global_coordinates = landmark_coordinates *
-                inverse_normalize_matrix[j];
+            Mat_<double> global_coordinates = landmark_coordinates * inverse_normalize_matrix[j];
             global_coordinates(0,0) += current_shapes[j](index,0);
             global_coordinates(0,1) += current_shapes[j](index,1);
             int temp_x = global_coordinates(0,0);
@@ -118,12 +117,6 @@ void FernCascade::read(ifstream& fin){
 	second_level_num_ = 500;
 	primary_fern_.resize(second_level_num_);
     for(int i = 0;i < second_level_num_;i++){
-		double temp;
-		if(i == 0){
-			fin>>temp;
-		}else{
-			fin>>temp>>temp;
-		}
         primary_fern_[i].read(fin);
     }
 

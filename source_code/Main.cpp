@@ -65,22 +65,14 @@ int main(){
     }  
 
     mean_shape = 1.0/(img_num) * mean_shape;
-    //cout<<"Start training..."<<endl;
+    // mean shape is correct
+    // Mat_<uchar> mean_shape_image = Mat_<uchar>::zeros(average_height,average_width);    
+    // show_image(mean_shape_image,mean_shape);
+    // cout<<"Start training..."<<endl;
 	
-	/*
 	train(images,target_shapes,mean_shape,initial_number,pixel_pair_num,
 			pixel_pair_in_fern,first_level_num,second_level_num);
-	*/
 	
-	// for testing
-	Mat_<uchar> test_image = imread("C:\\Users\\BiSai\\Documents\\code\\LFPW\\lfpwFaces\\10.jpg",0);
-	resize(test_image,test_image,Size(average_width,average_height));
-	Mat_<double> current_shape = test(test_image,target_shapes,mean_shape,1);
-	for(int i = 0;i < landmark_num;i++){
-		circle(test_image,Point2d(current_shape(i,0), current_shape(i,1)),3,Scalar(255,0,0),-1,8,0);
-	}
-	imshow("result",test_image);
-	waitKey(0);
 
     return 0;
 }

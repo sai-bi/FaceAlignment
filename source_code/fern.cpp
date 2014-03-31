@@ -51,16 +51,16 @@ void Fern::train(const vector<vector<double> >& pixel_density,
         for(int j = 0;j < pixel_pair_num;j++){
             covariance_pixel_shape(j) = calculate_covariance(project_result,pixel_density[j]); 
         }
-        double max_correlation = -1;
+        double max_correlation = numeric_limits<double>::min();
         double max_pixel_pair_index_1 = 0;
         double max_pixel_pair_index_2 = 0;
 		// find max correlation
         for(int j = 0;j < pixel_pair_num;j++){
-            for(int k = j+1;k < pixel_pair_num;k++){
+            for(int k = 0;k < pixel_pair_num;k++){
                 double temp = (covariance_pixel_shape(j) - covariance_pixel_shape(k))
-                    / (covariance(j,j) + covariance(k,k) - 2*covariance(j,k));
-                if(abs(temp) > max_correlation){
-                    max_correlation = abs(temp);
+                    / sqrt((covariance(j,j) + covariance(k,k) - 2*covariance(j,k)));
+                if(temp > max_correlation){
+                    max_correlation = temp;
                     max_pixel_pair_index_1 = j;
                     max_pixel_pair_index_2 = k; 
                 } 
@@ -137,10 +137,8 @@ void Fern::train(const vector<vector<double> >& pixel_density,
 
 
 void Fern::read(ifstream& fin){
-    //fin>>pixel_pair_num_in_fern_;
-    //fin>>landmark_num_;
-	pixel_pair_num_in_fern_ = 5;
-	landmark_num_ =35;
+    fin>>pixel_pair_num_in_fern_;
+    fin>>landmark_num_;
 	selected_x_.create(pixel_pair_num_in_fern_,2);
     selected_y_.create(pixel_pair_num_in_fern_,2);
     nearest_keypoint_index_.create(pixel_pair_num_in_fern_,1);
@@ -246,6 +244,7 @@ void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape,
         }
     } 
     shape = shape + bin_output_[bin_index] * invert_normalized_matrix;
+    show_image(image,shape);
 }
 
 

@@ -33,9 +33,9 @@ int main(){
     average_height = average_height / img_num;
     average_width  =average_width / img_num;
 
-	for(int i = 0;i < img_num;i++){
-		resize(images[i],images[i],Size(average_width,average_height));
-	}
+    for(int i = 0;i < img_num;i++){
+        resize(images[i],images[i],Size(average_width,average_height));
+    }
 
     ifstream fin;
     fin.open("./../data/LFPW/keypointsInfor.txt"); 
@@ -66,17 +66,24 @@ int main(){
     }  
 
     mean_shape = 1.0/(img_num) * mean_shape;
-	
-    
-    Mat_<uchar> test_image = imread("./../data/LFPW/lfpwFaces/10.jpg",0);
-	resize(test_image,test_image,Size(average_width,average_height));
-	Mat_<double> current_shape = test(test_image,target_shapes,mean_shape,1);
-	for(int i = 0;i < landmark_num;i++){
-		circle(test_image,Point2d(current_shape(i,0), current_shape(i,1)),3,Scalar(255,0,0),-1,8,0);
-	}
-	imshow("result",test_image);
-	waitKey(0);
+    cout<<"Load model..."<<endl;
+    ShapeRegressor regressor;
+    regressor.load("./data/model.txt");
+    cout<<"Model loaded..."<<endl;
 
+    while(true){
+        int index = 1;
+        cout<<"Input index:"<<endl;
+        cin>>index;
+        Mat_<uchar> test_image = imread("./../data/LFPW/lfpwFaces/" + to_string(index) + ".jpg",0);
+        resize(test_image,test_image,Size(average_width,average_height));
+        Mat_<double> current_shape = test(regressor,test_image,target_shapes,mean_shape,1);
+        for(int i = 0;i < landmark_num;i++){
+            circle(test_image,Point2d(current_shape(i,0),current_shape(i,1)),3,Scalar(255,0,0),-1,8,0);
+        }
+        imshow("result",test_image);
+        waitKey(0);
+    }
     return 0;
-    
+
 }

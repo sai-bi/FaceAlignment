@@ -116,10 +116,11 @@ void train(const vector<Mat_<uchar> >& input_images,
         int first_level_num,
         int second_level_num);
 
-Mat_<double> test(const Mat_<uchar>& image, const vector<Mat_<double> > target_shapes,
+Mat_<double> test(ShapeRegressor& regressor,const Mat_<uchar>& image, const vector<Mat_<double> > target_shapes,
         const Mat_<double>& mean_shape,
         int initial_number);
 
+void show_image(const Mat_<uchar>& input_image, const Mat_<double>&  points);
 
 
 #endif
