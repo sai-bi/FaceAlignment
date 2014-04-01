@@ -98,6 +98,10 @@ class ShapeRegressor{
         void train();
         void predict(const Mat_<uchar>& image, Mat_<double>& shape,
                 const Mat_<double>& mean_shape);
+        void calcSimil(const Mat_<float> &src,const Mat_<float> &dst,
+                float &a,float &b,float &tx,float &ty);
+        void invSimil(float a1,float b1,float tx1,float ty1,
+                float& a2,float& b2,float& tx2,float& ty2);
 };
 
 
