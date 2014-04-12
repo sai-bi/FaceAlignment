@@ -1,5 +1,5 @@
 /**
- * @author 
+ * @author Bi Sai 
  * @version 2014/03/17
  */
 
@@ -53,8 +53,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
 	// calculate the inverse of normalize matrix
     vector<Mat_<double> > inverse_normalize_matrix;
     for(int i = 0;i < normalize_matrix.size();i++){
-        Mat_<double> temp;
-        invert(normalize_matrix[i],temp,DECOMP_SVD);
+        Mat_<double> temp = Mat_<double>::eye(2,2);
+        // invert(normalize_matrix[i],temp,DECOMP_SVD);
         inverse_normalize_matrix.push_back(temp);
     }
 
@@ -123,10 +123,10 @@ void FernCascade::read(ifstream& fin){
 	return;
 }
 void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape,const Mat_<double>& mean_shape){
-    Mat_<double> normalize_matrix;
-    Mat_<double> invert_normalized_matrix;
-    solve(shape,mean_shape,normalize_matrix,DECOMP_SVD);
-    invert(normalize_matrix,invert_normalized_matrix,DECOMP_SVD);
+    Mat_<double> normalize_matrix = Mat_<double>::eye(2,2);
+    Mat_<double> invert_normalized_matrix = Mat_<double>::eye(2,2);
+    // solve(shape,mean_shape,normalize_matrix,DECOMP_SVD);
+    // invert(normalize_matrix,invert_normalized_matrix,DECOMP_SVD);
 
     for(int i = 0;i < second_level_num_;i++){
         primary_fern_[i].predict(image,shape,invert_normalized_matrix);

@@ -6,7 +6,7 @@
 #include "face.h"
 
 ShapeRegressor::ShapeRegressor(){
-
+    // to be added
 }
 /**
  * Constructors
@@ -57,6 +57,7 @@ void ShapeRegressor::train(){
         for(int j = 0;j < training_num_;j++){
             normalized_targets[j] = (target_shapes_[j] - current_shapes_[j]) * 
                 normalize_matrix[j];
+            // show_image(images_[j], current_shapes_[j] * normalize_matrix[j]);
         }
         fern_cascades_[i].train(images_,normalize_matrix,target_shapes_,mean_shape_,
                 second_level_num_,current_shapes_,pixel_pair_num_,normalized_targets,
@@ -71,8 +72,9 @@ void ShapeRegressor::train(){
 void ShapeRegressor::calcuate_normalized_matrix(vector<Mat_<double> >& normalize_matrix){
     normalize_matrix.clear();
     for(int i = 0;i < training_num_;i++){
-        Mat_<double> output_matrix;
-        solve(current_shapes_[i],mean_shape_,output_matrix,DECOMP_SVD);
+        Mat_<double> output_matrix = Mat_<double>::eye(2,2);
+        // solve(current_shapes_[i],mean_shape_,output_matrix,DECOMP_SVD);
+        // calcSimil() 
         normalize_matrix.push_back(output_matrix);
     } 
 }
@@ -134,12 +136,12 @@ void ShapeRegressor::save(const char* file_name){
 }
 
 
-void ShapeRegressor::calcSimil(const Mat_<float> &src,const Mat_<float> &dst,
-        float &a,float &b,float &tx,float &ty){
-    Mat_<float> H = Mat_<float>::zeros(4,4),g = Mat_<float>::zeros(4,1),p(4,1);
+void ShapeRegressor::calcSimil(const Mat_<double> &src,const Mat_<double> &dst,
+        double &a,double &b,double &tx,double &ty){
+    Mat_<double> H = Mat_<double>::zeros(4,4),g = Mat_<double>::zeros(4,1),p(4,1);
     for(int i = 0; i < src.rows/2; i++){
-        float x1 = src(2*i),y1 = src(2*i+1);
-        float x2 = dst(2*i),y2 = dst(2*i+1);
+        double x1 = src(2*i),y1 = src(2*i+1);
+        double x2 = dst(2*i),y2 = dst(2*i+1);
         H(0,0) += x1*x1 + y1*y1; H(0,2) += x1; H(0,3) += y1;
         g(0,0) += x1*x2 + y1*y2; g(1,0) += x1*y2 - y1*x2;
         g(2,0) += x2; g(3,0) += y2;
@@ -150,10 +152,10 @@ void ShapeRegressor::calcSimil(const Mat_<float> &src,const Mat_<float> &dst,
     a = p(0,0); b = p(1,0); tx = p(2,0); ty = p(3,0); return;
 }
 
-void ShapeRegressor::invSimil(float a1,float b1,float tx1,float ty1,
-        float& a2,float& b2,float& tx2,float& ty2){
-    Mat_<float> M = (cv::Mat_<float>(2,2) << a1, -b1, b1, a1);
-    Mat_<float> N = M.inv(cv::DECOMP_SVD); a2 = N(0,0); b2 = N(1,0);
+void ShapeRegressor::invSimil(double a1,double b1,double tx1,double ty1,
+        double& a2,double& b2,double& tx2,double& ty2){
+    Mat_<double> M = (cv::Mat_<double>(2,2) << a1, -b1, b1, a1);
+    Mat_<double> N = M.inv(cv::DECOMP_SVD); a2 = N(0,0); b2 = N(1,0);
     tx2 = -1.0*(N(0,0)*tx1 + N(0,1)*ty1);
     ty2 = -1.0*(N(1,0)*tx1 + N(1,1)*ty1); return;
 }

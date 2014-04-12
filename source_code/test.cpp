@@ -43,6 +43,9 @@ int main(){
     double start_y;
     double curr_width;
     double curr_height;
+
+
+
     Mat_<double> mean_shape(landmark_num,2);
     vector<Mat_<double> > target_shapes;
     for(int i = 0;i < landmark_num;i++){
@@ -78,6 +81,7 @@ int main(){
         Mat_<uchar> test_image = imread("./../data/LFPW/lfpwFaces/" + to_string(index) + ".jpg",0);
         resize(test_image,test_image,Size(average_width,average_height));
         Mat_<double> current_shape = test(regressor,test_image,target_shapes,mean_shape,1);
+        cout<<current_shape<<endl;
         for(int i = 0;i < landmark_num;i++){
             circle(test_image,Point2d(current_shape(i,0),current_shape(i,1)),3,Scalar(255,0,0),-1,8,0);
         }

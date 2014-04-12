@@ -1,5 +1,5 @@
 /**
- * @author 
+ * @author Bi Sai 
  * @version 2014/03/17
  */
 
@@ -38,8 +38,9 @@ void Fern::train(const vector<vector<double> >& pixel_density,
     for(int i = 0;i < pixel_pair_num_in_fern;i++){
 		// get a random direction
         Mat_<double> random_direction(landmark_num,2);
-        random_generator.fill(random_direction,RNG::UNIFORM,-1,1);
-        normalize(random_direction,random_direction);
+        // random_generator.fill(random_direction,RNG::UNIFORM,-1,1);
+        random_generator.fill(random_direction,RNG::NORMAL,0,1);
+        // normalize(random_direction,random_direction);
         vector<double> project_result;
 
 		// project the normalize targets to random direction
@@ -57,6 +58,21 @@ void Fern::train(const vector<vector<double> >& pixel_density,
 		// find max correlation
         for(int j = 0;j < pixel_pair_num;j++){
             for(int k = 0;k < pixel_pair_num;k++){
+                bool flag = false;
+                for(int p = 0;p < i;p++){
+                    if(j == pixel_pair_selected_index_(p,0) && k == pixel_pair_selected_index_(p,1)){
+                        flag = true;
+                        break; 
+                    }else if(j == pixel_pair_selected_index_(p,1) && k == pixel_pair_selected_index_(p,0)){
+                        flag = true;
+                        break;
+                    }
+                }
+
+                if(flag){
+                    continue;
+                }
+
                 double temp = (covariance_pixel_shape(j) - covariance_pixel_shape(k))
                     / sqrt((covariance(j,j) + covariance(k,k) - 2*covariance(j,k)));
                 if(temp > max_correlation){
@@ -97,9 +113,12 @@ void Fern::train(const vector<vector<double> >& pixel_density,
     //Mat_<double> threshold(pixel_pair_num_in_fern,1);
 	threshold_.create(pixel_pair_num_in_fern_,1);
 	for(int i = 0;i < pixel_pair_num_in_fern;i++){
-        double lower_value = 0.7 * density_difference_range(i,0) + 0.3 * density_difference_range(i,1);
-        double upper_value = 0.3 * density_difference_range(i,0) + 0.7 * density_difference_range(i,1); 
-        threshold_(i) = random_generator.uniform(lower_value,upper_value);  
+        // double lower_value = 0.7 * density_difference_range(i,0) + 0.3 * density_difference_range(i,1);
+        // double upper_value = 0.3 * density_difference_range(i,0) + 0.7 * density_difference_range(i,1); 
+        double temp1 = abs(density_difference_range(i,0));
+        double temp2 = abs(density_difference_range(i,1));
+        double temp3 = temp1 > temp2 ? temp1 : temp2; 
+        threshold_(i) = random_generator.uniform(-0.2 * temp3, 0.2 * temp3);  
     }
 	// determine the bin for each shape
     for(int i = 0;i < current_shapes.size();i++){
@@ -124,7 +143,7 @@ void Fern::train(const vector<vector<double> >& pixel_density,
         for(int j = 0;j < bin_size;j++){  
             temp = temp + normalized_targets[bin_of_shape[i][j]];
         }
-        bin_output_[i] = (1.0/((1+1000/bin_size) * bin_size)) * temp;
+        bin_output_[i] = (1.0/((1.0+1000.0/bin_size) * bin_size)) * temp;
         for(int j = 0;j < bin_size;j++){
             int index = bin_of_shape[i][j];
             current_shapes[index] = current_shapes[index] + bin_output_[i]
@@ -244,7 +263,7 @@ void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape,
         }
     } 
     shape = shape + bin_output_[bin_index] * invert_normalized_matrix;
-    show_image(image,shape);
+    // show_image(image,shape);
 }
 
 

@@ -1,5 +1,5 @@
 /** 
- * @author 
+ * @author Bi Sai 
  * @version 2014/03/29
  */
 
@@ -27,7 +27,7 @@ void train(const vector<Mat_<uchar> >& input_images,
             do{
                 index = random_generator.uniform(0,input_images.size()); 
             }while(index == i);
-            augment_current_shapes.push_back(target_shapes[index]);
+            augment_current_shapes.push_back(mean_shape);
         }
     }
 
@@ -49,7 +49,8 @@ Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vec
         do{
             index = random_generator.uniform(0,target_shapes.size());  
         }while(index == i);
-        Mat_<double> shape = target_shapes[index].clone();
+        // Mat_<double> shape = target_shapes[index].clone();
+        Mat_<double> shape = mean_shape.clone();    
         regressor.predict(image,shape,mean_shape);
         if(i == 0){
             combine_shape = shape.clone();
@@ -90,5 +91,5 @@ void show_image(const Mat_<uchar>& input_image, const Mat_<double>&  points){
         circle(image,Point2d(points(i,0),points(i,1)),3,Scalar(255,0,0),-1,8,0); 
     }
     imshow("image",image);
-    waitKey(5);
+    // waitKey(2);
 }

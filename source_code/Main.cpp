@@ -65,7 +65,6 @@ int main(){
     }  
 
     mean_shape = 1.0/(img_num) * mean_shape;
-    // mean shape is correct
     // Mat_<uchar> mean_shape_image = Mat_<uchar>::zeros(average_height,average_width);    
     // show_image(mean_shape_image,mean_shape);
     // cout<<"Start training..."<<endl;
