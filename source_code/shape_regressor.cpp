@@ -157,7 +157,8 @@ void ShapeRegressor::invSimil(double a1,double b1,double tx1,double ty1,
     Mat_<double> M = (cv::Mat_<double>(2,2) << a1, -b1, b1, a1);
     Mat_<double> N = M.inv(cv::DECOMP_SVD); a2 = N(0,0); b2 = N(1,0);
     tx2 = -1.0*(N(0,0)*tx1 + N(0,1)*ty1);
-    ty2 = -1.0*(N(1,0)*tx1 + N(1,1)*ty1); return;
+    ty2 = -1.0*(N(1,0)*tx1 + N(1,1)*ty1); 
+    return;
 }
 
 
