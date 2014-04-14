@@ -35,19 +35,25 @@ void Fern::train(const vector<vector<double> >& pixel_density,
     landmark_num_ = landmark_num;
     RNG random_generator(getTickCount());
     pixel_pair_selected_index_.create(pixel_pair_num_in_fern,2);
-    for(int i = 0;i < pixel_pair_num_in_fern;i++){
+    for(int i = 0;i < pixel_pair_num_in_fern_;i++){
 		// get a random direction
-        Mat_<double> random_direction(landmark_num,2);
-        // random_generator.fill(random_direction,RNG::UNIFORM,-1,1);
-        random_generator.fill(random_direction,RNG::NORMAL,0,1);
+        Mat_<double> random_direction(landmark_num * 2,1);
+        random_generator.fill(random_direction,RNG::UNIFORM,-1,1);
+        normalize(random_direction,random_direction);
+        // random_generator.fill(random_direction,RNG::,-1,1);
         // normalize(random_direction,random_direction);
         vector<double> project_result;
-
+        
 		// project the normalize targets to random direction
         for(int j = 0;j < normalized_targets.size();j++){
-            Mat temp = random_direction.mul(normalized_targets[j]);
-            project_result.push_back(sum(temp).val[0]);
+            double temp = 0;
+            for(int k = 0;k < landmark_num_;k++){
+                temp += random_direction(2*k) * normalized_targets[j](k,0);
+                temp += random_direction(2*k+1) * normalized_targets[j](k,1);
+            } 
+            project_result.push_back(temp); 
         }
+
         Mat_<double> covariance_pixel_shape(pixel_pair_num,1);
         for(int j = 0;j < pixel_pair_num;j++){
             covariance_pixel_shape(j) = calculate_covariance(project_result,pixel_density[j]); 
@@ -59,6 +65,9 @@ void Fern::train(const vector<vector<double> >& pixel_density,
         for(int j = 0;j < pixel_pair_num;j++){
             for(int k = 0;k < pixel_pair_num;k++){
                 bool flag = false;
+                if(j == k){
+                    continue;
+                }
                 for(int p = 0;p < i;p++){
                     if(j == pixel_pair_selected_index_(p,0) && k == pixel_pair_selected_index_(p,1)){
                         flag = true;
@@ -75,13 +84,14 @@ void Fern::train(const vector<vector<double> >& pixel_density,
 
                 double temp = (covariance_pixel_shape(j) - covariance_pixel_shape(k))
                     / sqrt((covariance(j,j) + covariance(k,k) - 2*covariance(j,k)));
-                if(temp > max_correlation){
+                if(abs(temp) > max_correlation){
                     max_correlation = temp;
                     max_pixel_pair_index_1 = j;
                     max_pixel_pair_index_2 = k; 
                 } 
             }
         } 
+        assert(max_pixel_pair_index_1 != max_pixel_pair_index_2);
         pixel_pair_selected_index_(i,0) = max_pixel_pair_index_1;
         pixel_pair_selected_index_(i,1) = max_pixel_pair_index_2; 
     }  

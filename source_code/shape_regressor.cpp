@@ -57,7 +57,6 @@ void ShapeRegressor::train(){
         for(int j = 0;j < training_num_;j++){
             normalized_targets[j] = (target_shapes_[j] - current_shapes_[j]) * 
                 normalize_matrix[j];
-            // show_image(images_[j], current_shapes_[j] * normalize_matrix[j]);
         }
         fern_cascades_[i].train(images_,normalize_matrix,target_shapes_,mean_shape_,
                 second_level_num_,current_shapes_,pixel_pair_num_,normalized_targets,
