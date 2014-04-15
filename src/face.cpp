@@ -138,73 +138,6 @@ void Face::getFeaturePixelLocation(){
 
     // random face pixels selected
     
-    /*
-    featurePixelCoordinates.clear();
-    nearestKeypointIndex.clear();
-    vector<int> allIndex;
-    for(int i = 0;i < averageHeight * averageWidth;i++){
-        allIndex.push_back(i); 
-    }    
-
-
-    random_shuffle(allIndex.begin(),allIndex.end());
-     
-    double maxX = MINNUM;
-    double maxY = MINNUM;
-    double minX = MAXNUM;
-    double minY = MAXNUM; 
-    for(int i = 0;i < meanShape.size();i++){
-        if(meanShape[i].x > maxX){
-            maxX = meanShape[i].x;
-        }
-        if(meanShape[i].x < minX){
-            minX = meanShape[i].x;
-        }
-        if(meanShape[i].y > maxY){
-            maxY = meanShape[i].y;
-        }
-        if(meanShape[i].y < minY){
-            minY = meanShape[i].y;
-        }
-    } 
-        
-    // limit the pixel location range
-
-    double leftX = (averageWidth - (maxX - minX)) / 4;
-    double upY = (averageHeight - (maxY - minY)) / 4;
-   
-    // cout<<leftX<<endl;
-    // cout<<upY<<endl;
-
-    int count = 0;
-    for(int i = 0;i < allIndex.size();i++){
-        if(count == featurePixelNum){
-            break;
-        }
-        
-        int x = allIndex[i] % averageWidth;
-        int y = allIndex[i] / averageWidth;
-            
-
-        if(x < leftX || x > averageWidth - leftX || y < upY || y > averageHeight - upY){
-            continue;
-        }
-            
-        count++;
-
-        double dist = MAXNUM;
-        int minIndex = 0;
-        for(int j=0;j < meanShape.size();j++){
-            double temp = norm(Point2d(x,y) - meanShape[j]);
-            if(temp < dist){
-                dist = temp;
-                minIndex = j;
-            } 
-        } 
-        featurePixelCoordinates.push_back(Point2d(x,y) - meanShape[minIndex]);
-        nearestKeypointIndex.push_back(minIndex);
-    }
-    */
     featurePixelCoordinates.clear();
     nearestKeypointIndex.clear(); 
     RNG random_generator(getTickCount());
@@ -914,6 +847,56 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
     fin.close();
 
 }
+
+
+
+void Face::calculate_mean_shape(){
+    // center each shape at origin
+    for(int i = 0;i < currentShape.size();i++){
+        double mean_x = 0;
+        double mean_y = 0; 
+        for(int j = 0;j < currentShape[i].size();j++){
+            mean_x += currentShape[i][j].x;
+            mean_y += currentShape[i][j].y;     
+        }
+        mean_x = mean_x / currentShape[i].size();
+        mean_y = mean_y / currentShape[i].size();
+        for(int j = 0;j < currentShape[i].size();j++){
+            currentShape[i][j].x -= mean_x;
+            currentShape[i][j].y -= mean_y;
+        }
+    }
+
+    // get the mean shape
+    vector<Point2d> new_mean_shape;
+    vector<Point2d> current_mean_shape;
+    scale_shape(currentShape[0]);
+    new_mean_shape = currentShape[0];
+     
+    do{
+        current_mean_shape = new_mean_shape;
+        for(int i = 0;i < new_mean_shape.size();i++){
+            new_mean_shape[i].x = 0;
+            new_mean_shape[i].y = 0;
+        }
+    }while();    
+}
+
+// scale each shape x such that ||x|| = 1
+void Face::scale_shape(vector<Point2d>& input_shape){
+    double sum = 0;
+    for(int i = 0;i < input_shape.size();i++){
+        sum += (pow(input_shape[i].x,2.0) + pow(input_shape[i].y,2.0));
+    }
+    sum = sqrt(sum);
+    for(int i = 0;i < input_shape.size();i++){
+        input_shape[i].x /= sum;
+        input_shape[i].y /= sum; 
+    }
+
+}
+
+
 
 
 

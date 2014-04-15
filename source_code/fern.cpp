@@ -38,7 +38,7 @@ void Fern::train(const vector<vector<double> >& pixel_density,
     for(int i = 0;i < pixel_pair_num_in_fern_;i++){
 		// get a random direction
         Mat_<double> random_direction(landmark_num * 2,1);
-        random_generator.fill(random_direction,RNG::UNIFORM,-1,1);
+        random_generator.fill(random_direction,RNG::UNIFORM,-1.1,1.1);
         normalize(random_direction,random_direction);
         // random_generator.fill(random_direction,RNG::,-1,1);
         // normalize(random_direction,random_direction);
@@ -58,7 +58,7 @@ void Fern::train(const vector<vector<double> >& pixel_density,
         for(int j = 0;j < pixel_pair_num;j++){
             covariance_pixel_shape(j) = calculate_covariance(project_result,pixel_density[j]); 
         }
-        double max_correlation = numeric_limits<double>::min();
+        double max_correlation = -1;
         double max_pixel_pair_index_1 = 0;
         double max_pixel_pair_index_2 = 0;
 		// find max correlation
@@ -82,16 +82,28 @@ void Fern::train(const vector<vector<double> >& pixel_density,
                     continue;
                 }
 
+                double temp1 = covariance(j,j) + covariance(k,k) - 2 * covariance(j,k);
+                if(temp1 == 0){
+                    // cout<<"covariance is 0"<<endl;
+                    continue;
+                }
+
+
                 double temp = (covariance_pixel_shape(j) - covariance_pixel_shape(k))
                     / sqrt((covariance(j,j) + covariance(k,k) - 2*covariance(j,k)));
                 if(abs(temp) > max_correlation){
                     max_correlation = temp;
                     max_pixel_pair_index_1 = j;
                     max_pixel_pair_index_2 = k; 
-                } 
+                }
+
             }
         } 
-        assert(max_pixel_pair_index_1 != max_pixel_pair_index_2);
+        // assert(max_pixel_pair_index_1 != max_pixel_pair_index_2);
+        if(max_pixel_pair_index_1 == max_pixel_pair_index_2){
+            cout<<max_pixel_pair_index_1 << "   "<<max_pixel_pair_index_2<<endl;
+        }
+
         pixel_pair_selected_index_(i,0) = max_pixel_pair_index_1;
         pixel_pair_selected_index_(i,1) = max_pixel_pair_index_2; 
     }  

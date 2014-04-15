@@ -27,7 +27,8 @@ void train(const vector<Mat_<uchar> >& input_images,
             do{
                 index = random_generator.uniform(0,input_images.size()); 
             }while(index == i);
-            augment_current_shapes.push_back(mean_shape);
+            // augment_current_shapes.push_back(mean_shape);
+            augment_current_shapes.push_back(target_shapes[index]);
         }
     }
 
@@ -49,8 +50,8 @@ Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vec
         do{
             index = random_generator.uniform(0,target_shapes.size());  
         }while(index == i);
-        // Mat_<double> shape = target_shapes[index].clone();
-        Mat_<double> shape = mean_shape.clone();    
+        Mat_<double> shape = target_shapes[index].clone();
+        // Mat_<double> shape = mean_shape.clone();    
         regressor.predict(image,shape,mean_shape);
         if(i == 0){
             combine_shape = shape.clone();
