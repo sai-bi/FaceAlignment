@@ -879,7 +879,18 @@ void Face::calculate_mean_shape(){
             new_mean_shape[i].x = 0;
             new_mean_shape[i].y = 0;
         }
-    }while();    
+        for(int i = 0;i < currentShape.size();i++){
+            align(currentShape[i], current_mean_shape);      
+            new_mean_shape = vectorPlus(new_mean_shape,currentShape[i]);
+        } 
+        for(int i = 0;i < new_mean_shape.size();i++){
+            new_mean_shape[i] = (1.0/currentShape.size()) * new_mean_shape[i];
+        }
+        align(new_mean_shape,x0);
+        scale_shape(new_mean_shape);
+    }while(norm(vectorMinus(current_mean_shape - new_mean_shape)) > 1e-10);
+    
+    meanShape = current_mean_shape;
 }
 
 // scale each shape x such that ||x|| = 1
@@ -893,10 +904,48 @@ void Face::scale_shape(vector<Point2d>& input_shape){
         input_shape[i].x /= sum;
         input_shape[i].y /= sum; 
     }
-
 }
 
+double Face::norm_vector(const vector<Point2d>& input_vector){
+    double sum = 0;
+    for(int i = 0;i < input_vector.size();i++){
+        sum += input_vector[i].x;
+        sum += input_vector[i].y; 
+    }
 
+    return sqrt(sum);
+}
+
+void Face::align(vector<Point2d>& src, const vector<Point2d>& dst){
+    double scale = 0;
+    double theta = 0;
+    double a = 0;
+    double b = 0;
+    double part1 = 0;
+    double part2 = 0;
+    for(int i = 0;i < src.size();i++){
+        part1 += (src[i].x * dst[i].x);
+        part1 += (src[i].y * dst[i].y);
+        part2 += (src[i].x * dst[i].y - src[i].y * dst[i].x);
+    } 
+    double part3 = pow(norm_vector(src),2.0);
+
+    a = part1 / part3;
+    b = part2 / part3;
+
+    scale = sqrt(a*a + b*b);
+    theta = atan(b/a);
+     
+    double cos_theta = cos(theta);
+    double sin_theta = sin(theta);
+
+    for(int i = 0;i < src.size();i++){
+        double x = src[i].x;
+        double y = src[i].y;
+        src[i].x = s * (cos_theta * x - sin_theta * y);
+        src[i].y = s * (sin_theta * x + cos_theta * y); 
+    }         
+}
 
 
 
