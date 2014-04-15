@@ -71,7 +71,7 @@ void Face::readData(){
         targetShape.push_back(keypoint);
     }
 
-
+    cout<<targetShape.size()<<endl;
 
     fin.close();
 
@@ -137,6 +137,8 @@ void Face::getFeaturePixelLocation(){
     // get their coordinates related to the nearest face keypoints
 
     // random face pixels selected
+    
+    /*
     featurePixelCoordinates.clear();
     nearestKeypointIndex.clear();
     vector<int> allIndex;
@@ -201,7 +203,19 @@ void Face::getFeaturePixelLocation(){
         } 
         featurePixelCoordinates.push_back(Point2d(x,y) - meanShape[minIndex]);
         nearestKeypointIndex.push_back(minIndex);
+    }
+    */
+    featurePixelCoordinates.clear();
+    nearestKeypointIndex.clear(); 
+    RNG random_generator(getTickCount());
+    for(int i = 0;i < featurePixelNum;i++){
+        double x = random_generator.uniform(-20,20);
+        double y = random_generator.uniform(-20,20); 
+        featurePixelCoordinates.push_back(Point2d(x,y));
+        int index = random_generator.uniform(0,keypointNum); 
+        nearestKeypointIndex.push_back(index);
     } 
+
 
     // cout<<count<<endl;
     cout<<featurePixelCoordinates.size()<<endl;
@@ -287,9 +301,10 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
                 double temp3 = covariance.at<double>(k,j);
 
                 if(abs(temp3) < 1e-20){
-                    cout<<temp3<<endl;
-                    cout<<"Denominator cannot be zero."<<endl;
-                    exit(-1); 
+                    // cout<<temp3<<endl;
+                    // cout<<"Denominator cannot be zero."<<endl;
+                    // exit(-1); 
+                    continue;
                 }
 
                 double temp4 = (temp1 - temp2) / temp3;
@@ -398,8 +413,10 @@ void Face::getRandomDirection(vector<double>& randomDirection){
     double sum = 0;
     // the size of randomDirection has to be 2*keypointNum, because we 
     // have put x and y together
+    RNG random_generator(getTickCount());
     for(int i = 0;i < 2 * keypointNum;i++){
-        int temp = rand()%1000 + 1; 
+        // int temp = rand()%1000 + 1; 
+        double temp = random_generator.uniform(-1.1,1.1);
         randomDirection.push_back(temp);
         sum = sum + temp * temp;
     }
@@ -416,8 +433,10 @@ void Face::getRandomDirection(vector<double>& randomDirection){
 void Face::firstLevelRegression(){
 
     // first initial currentShape
+    RNG random_generator(getTickCount());
     for(int i = 0;i < targetShape.size();i++){
-        currentShape.push_back(meanShape);
+        int index = random_generator.uniform(0,imgNum);
+        currentShape.push_back(targetShape[index]);
     }
 
     for(int i = 0;i < firstLevelNum;i++){
@@ -483,6 +502,11 @@ void Face::firstLevelRegression(){
                 double temp2 = getCovariance(pixelDensity[k],pixelDensity[k]);
                 double temp3 = 2 * getCovariance(pixelDensity[j],pixelDensity[k]);
                 double temp = sqrt(temp1 + temp2 - temp3);
+               
+                if(abs(temp) == 0){
+                    cout<<pixelDensity[j][0]<<" "<<pixelDensity[j][1]<<endl; 
+                    cout<<pixelDensity[k][0]<<" "<<pixelDensity[k][1]<<endl; 
+                }
                 covariance.at<double>(j,k) = temp;
                 covariance.at<double>(k,j) = temp;
             }
@@ -727,7 +751,7 @@ void Face::faceTest(){
     ifstream fin;
     fin.open("./trainingoutput/featurePixelCoordinates.txt");
 
-    string testImageName = "test3.jpg";
+    string testImageName = "./download.jpeg";
     Mat testImg = imread(testImageName.c_str());    
     // int testIndex = 491;
     // Mat testImg = faceImages[testIndex];
@@ -741,8 +765,8 @@ void Face::faceTest(){
     char temp;
 
 
-    vector<Point2d> testCurrentShape = meanShape;  
-    // vector<Point2d> testCurrentShape = targetShape[4];
+    // vector<Point2d> testCurrentShape = meanShape ;  
+    vector<Point2d> testCurrentShape = targetShape[4];
     for(int i = 0;i < firstLevelNum;i++){
         cout<<"Level: "<<i<<endl;
         vector<Point2d> inputPixelCoordinates;
