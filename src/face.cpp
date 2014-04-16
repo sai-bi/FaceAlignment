@@ -16,7 +16,25 @@ void Face::run(){
 
     // calculate mean shape;
     cout<<"Get mean shape..."<<endl;
-    getMeanShape();
+    
+    preprocessing();
+
+    calculate_mean_shape();
+
+    
+    double min_x = 1e10;
+    double max_x = -1e10;
+    for(int i = 0;i < meanShape.size();i++){
+        if(meanShape[i].x < min_x){
+            min_x = meanShape[i].x;
+        }
+        if(meanShape[i].x > max_x){
+            max_x = meanShape[i].x;
+        }
+    }
+        
+    pixel_range = 0.12 * (max_x - min_x); 
+
 
     // PROGRAM MODE: 0 for training, 1 for testing
     if(mode == 0){
@@ -86,7 +104,7 @@ void Face::readData(){
 }
 
 
-void Face::getMeanShape(){
+void Face::preprocessing(){
     // first scale all images to the same size
     // change the keypoints coordinates 
     // average all keypoints in the same position
@@ -110,40 +128,48 @@ void Face::getMeanShape(){
     }  
 
     // change the keypoint coordinates
-    for(int i = 0;i < keypointNum;i++){
-        meanShape.push_back(Point2d(0,0));
-    }
     for(int i = 0;i < targetShape.size();i++){
         for(int j = 0;j < targetShape[i].size();j++){
             double x = targetShape[i][j].x * averageWidth / imgSize[i].x;
             double y = targetShape[i][j].y * averageHeight / imgSize[i].y;  
             targetShape[i][j].x = x;
             targetShape[i][j].y = y;  
-
-            meanShape[j].x += x;
-            meanShape[j].y += y;
         }
-    } 
-
-    // get the mean shape  
-    for(int i = 0;i < meanShape.size();i++){
-        meanShape[i].x = meanShape[i].x / targetShape.size();
-        meanShape[i].y = meanShape[i].y / targetShape.size();
     }
+    
+    for(int i = 0;i < targetShape.size();i++){
+        Point2d temp = get_mean(targetShape[i]);
+        target_gravity_center.push_back(temp);
+        
+        for(int j = 0;j  < targetShape[i].size();j++){
+            targetShape[i][j] = targetShape[i][j] - temp;
+        } 
+    }
+    
+    RNG random_generator(getTickCount());
+    for(int i = 0;i < imgNum;i++){
+        int index = 0;
+        do{
+            index = random_generator.uniform(0,imgNum);
+        }while(index == i);
+        currentShape.push_back(targetShape[index]);
+        current_shape_gravity_center.push_back(target_gravity_center[index]);
+    }
+
 }
 
 void Face::getFeaturePixelLocation(){
     // sample a number of pixels from the face images
     // get their coordinates related to the nearest face keypoints
-
     // random face pixels selected
     
     featurePixelCoordinates.clear();
     nearestKeypointIndex.clear(); 
     RNG random_generator(getTickCount());
+    
     for(int i = 0;i < featurePixelNum;i++){
-        double x = random_generator.uniform(-20,20);
-        double y = random_generator.uniform(-20,20); 
+        double x = random_generator.uniform(-pixel_range,pixel_range);
+        double y = random_generator.uniform(-pixel_range,pixel_range); 
         featurePixelCoordinates.push_back(Point2d(x,y));
         int index = random_generator.uniform(0,keypointNum); 
         nearestKeypointIndex.push_back(index);
@@ -366,17 +392,34 @@ void Face::getRandomDirection(vector<double>& randomDirection){
 void Face::firstLevelRegression(){
 
     // first initial currentShape
-    RNG random_generator(getTickCount());
-    for(int i = 0;i < targetShape.size();i++){
-        int index = random_generator.uniform(0,imgNum);
-        currentShape.push_back(targetShape[index]);
-    }
+    // RNG random_generator(getTickCount());
+    // for(int i = 0;i < targetShape.size();i++){
+        // int index = random_generator.uniform(0,imgNum);
+        // currentShape.push_back(targetShape[index]);
+    // }
+    for(int i = 0;i < currentShape.size();i++){
+        normalize_targets.push_back(vectorMinus(targetShape[i],currentShape[i]));
+    }    
+
 
     for(int i = 0;i < firstLevelNum;i++){
-
         cout<<endl;
         cout<<"First level regression: "<<i<<endl;
         cout<<endl;
+        
+        current_shape_similar_transform.clear(); 
+        // normalize targets
+        for(int j = 0;j < currentShape.size();j++){ 
+            SimilarTransform transform;
+            align(currentShape[i], meanShape, transform);
+            current_shape_similar_transform.push_back(transform);
+        } 
+    
+        if(i == 0){
+            for(int j = 0;j < normalize_targets.size();j++){
+                apply_similar_transform.push_back(normalize_targets[j],current_shape_similar_transform[j]);
+            }                        
+        }
 
         getFeaturePixelLocation();
 
@@ -854,17 +897,19 @@ void Face::calculate_mean_shape(){
     // center each shape at origin
     vector<vector<Point2d> > input_shapes = currentShape;
     for(int i = 0;i < input_shapes.size();i++){
-        double mean_x = 0;
-        double mean_y = 0; 
+        // double mean_x = 0;
+        // double mean_y = 0; 
+        // for(int j = 0;j < input_shapes[i].size();j++){
+            // mean_x += input_shapes[i][j].x;
+            // mean_y += input_shapes[i][j].y;     
+        // }
+        // mean_x = mean_x / input_shapes[i].size();
+        // mean_y = mean_y / input_shapes[i].size();
+        Point2d temp = get_mean(input_shapes[i]);
+
         for(int j = 0;j < input_shapes[i].size();j++){
-            mean_x += input_shapes[i][j].x;
-            mean_y += input_shapes[i][j].y;     
-        }
-        mean_x = mean_x / input_shapes[i].size();
-        mean_y = mean_y / input_shapes[i].size();
-        for(int j = 0;j < input_shapes[i].size();j++){
-            input_shapes[i][j].x -= mean_x;
-            input_shapes[i][j].y -= mean_y;
+            input_shapes[i][j].x -= temp.x;
+            input_shapes[i][j].y -= temp.y;
         }
     }
 
@@ -948,6 +993,17 @@ void Face:: apply_similar_transform(vector<Point2d>& src, const SimilarTransform
         src[i].x = a * x - b * y;
         src[i].y = b * x + a * y; 
     }
+}
+
+Point2d Face::get_mean(const vector<Point2d>& point){
+    Point2d result(0,0);
+    for(int i = 0;i < point.size();i++){
+        result.x += point[i].x;
+        result.y += point[i].y; 
+    } 
+    result.x /= point.size();
+    result.y /= point.size();
+    return result;
 }
 
 

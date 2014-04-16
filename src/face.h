@@ -36,12 +36,9 @@ class Face{
         int debug;
         int mode;
 
-        // RNG rng;
-        //grayscale training images
-        // vector<Mat> trainingImages;
-        //grayscale testing images 
-        // vector<Mat> testingImages;
-        //mean shape of training images
+        double pixel_range;
+
+
         vector<Point2d> meanShape;
         //face keypoints locations of each face 
         vector<vector<Point2d> > targetShape;
@@ -58,31 +55,35 @@ class Face{
         int averageWidth;
         string currentFileName;
 
-        //the coordinates of each feature pixel, relative to the nearest
-        //keypoint 
+        //the coordinates of each feature pixel, relative to the nearest keypoint 
         vector<Point2d> featurePixelCoordinates;
         //index of nearest coordinates
         vector<int> nearestKeypointIndex;
+    
+        // normalize targets
+        vector<vector<Point2d> > normalize_targets;
+        // similar transform for normalize targets
+        // vector<SimilarTransform> targets_similar_transform;
 
+        vector<vector<Point2d> > current_shape_similar_transform;         
 
-        // vector<vector<double> > trainingFeatures;
-        // vector<vector<double> > testingFeatures;
+        //
+        vector<Point2d> target_gravity_center; 
+        vector<Point2d> current_shape_gravity_center; 
+        //  
 
         Face();
 
         void run();
 
-        //get the meanShape
-        void getMeanShape();
+        void preprocessing();
 
         void readData();
-
-        //extract feature
-
+        
         void  getFeaturePixelLocation(); 
         void  extractFeature(const Mat& covariance,const vector<vector<double> >& pixelDensity,
-                 vector<Point2i>& selectedFeatureIndex,
-                 vector<double>& threhold);
+                vector<Point2i>& selectedFeatureIndex,
+                vector<double>& threhold);
 
         double  product(const vector<double>& v1, const vector<double>& v2);
         void  getDeltaShape(vector<vector<double> >& deltaShape);
@@ -103,8 +104,8 @@ class Face{
         // read parameters from parameters.ini
         void readParameters();
         void secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape, 
-            const vector<Point2d>& inputPixelCoordinates,const vector<int>& inputNearestIndex,
-            const Mat& testImg);
+                const vector<Point2d>& inputPixelCoordinates,const vector<int>& inputNearestIndex,
+                const Mat& testImg);
 
         void apply_similar_transform(vector<Point2d>& src, const SimilarTransform& transform);
         void calculate_mean_shape();
