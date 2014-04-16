@@ -1,5 +1,6 @@
 #ifndef FACE_H
 #define FACE_H
+const double PI =  3.141592653589793238463
 #include <iostream>
 #include <cmath>
 #include <fstream>
@@ -104,7 +105,23 @@ class Face{
         void secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape, 
             const vector<Point2d>& inputPixelCoordinates,const vector<int>& inputNearestIndex,
             const Mat& testImg);
+
+        void apply_similar_transform(vector<Point2d>& src, const SimilarTransform& transform);
+        void calculate_mean_shape();
+        void scale_shape(vector<Point2d>& input_shape);
+        double cal_vector_norm(const vector<Point2d>& input_vector);
+        void align(const vector<Point2d>& src, const vector<Point2d>& dst, SimilarTransform& transform);
+
 };
+
+class SimilarTransform{
+    public:
+        double a;
+        double b;
+        SimilarTransform inverse();
+        SimilarTransform();
+};
+
 
 #endif
 

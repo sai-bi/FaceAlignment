@@ -852,26 +852,27 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
 
 void Face::calculate_mean_shape(){
     // center each shape at origin
-    for(int i = 0;i < currentShape.size();i++){
+    vector<vector<Point2d> > input_shapes = currentShape;
+    for(int i = 0;i < input_shapes.size();i++){
         double mean_x = 0;
         double mean_y = 0; 
-        for(int j = 0;j < currentShape[i].size();j++){
-            mean_x += currentShape[i][j].x;
-            mean_y += currentShape[i][j].y;     
+        for(int j = 0;j < input_shapes[i].size();j++){
+            mean_x += input_shapes[i][j].x;
+            mean_y += input_shapes[i][j].y;     
         }
-        mean_x = mean_x / currentShape[i].size();
-        mean_y = mean_y / currentShape[i].size();
-        for(int j = 0;j < currentShape[i].size();j++){
-            currentShape[i][j].x -= mean_x;
-            currentShape[i][j].y -= mean_y;
+        mean_x = mean_x / input_shapes[i].size();
+        mean_y = mean_y / input_shapes[i].size();
+        for(int j = 0;j < input_shapes[i].size();j++){
+            input_shapes[i][j].x -= mean_x;
+            input_shapes[i][j].y -= mean_y;
         }
     }
 
     // get the mean shape
     vector<Point2d> new_mean_shape;
     vector<Point2d> current_mean_shape;
-    scale_shape(currentShape[0]);
-    new_mean_shape = currentShape[0];
+    scale_shape(input_shapes[0]);
+    new_mean_shape = input_shapes[0];
      
     do{
         current_mean_shape = new_mean_shape;
@@ -879,16 +880,18 @@ void Face::calculate_mean_shape(){
             new_mean_shape[i].x = 0;
             new_mean_shape[i].y = 0;
         }
-        for(int i = 0;i < currentShape.size();i++){
-            align(currentShape[i], current_mean_shape);      
-            new_mean_shape = vectorPlus(new_mean_shape,currentShape[i]);
+        for(int i = 0;i < input_shapes.size();i++){
+            align(input_shapes[i], current_mean_shape);      
+            new_mean_shape = vectorPlus(new_mean_shape,input_shapes[i]);
         } 
         for(int i = 0;i < new_mean_shape.size();i++){
-            new_mean_shape[i] = (1.0/currentShape.size()) * new_mean_shape[i];
+            new_mean_shape[i] = (1.0/input_shapes.size()) * new_mean_shape[i];
         }
-        align(new_mean_shape,x0);
+        SimilarTransform transform;
+        align(new_mean_shape,x0,transform);
+        apply_similar_transform(new_mean_shape,transform);
         scale_shape(new_mean_shape);
-    }while(norm(vectorMinus(current_mean_shape - new_mean_shape)) > 1e-10);
+    }while(cal_vector_norm(vectorMinus(current_mean_shape - new_mean_shape)) > 1e-10);
     
     meanShape = current_mean_shape;
 }
@@ -906,17 +909,16 @@ void Face::scale_shape(vector<Point2d>& input_shape){
     }
 }
 
-double Face::norm_vector(const vector<Point2d>& input_vector){
+double Face::cal_vector_norm(const vector<Point2d>& input_vector){
     double sum = 0;
     for(int i = 0;i < input_vector.size();i++){
         sum += input_vector[i].x;
         sum += input_vector[i].y; 
     }
-
     return sqrt(sum);
 }
 
-void Face::align(vector<Point2d>& src, const vector<Point2d>& dst){
+void Face::align(const vector<Point2d>& src, const vector<Point2d>& dst, SimilarTransform& transform){
     double scale = 0;
     double theta = 0;
     double a = 0;
@@ -933,18 +935,33 @@ void Face::align(vector<Point2d>& src, const vector<Point2d>& dst){
     a = part1 / part3;
     b = part2 / part3;
 
-    scale = sqrt(a*a + b*b);
-    theta = atan(b/a);
-     
-    double cos_theta = cos(theta);
-    double sin_theta = sin(theta);
+    transform.a = a;
+    transform.b = b; 
+}
 
+void Face:: apply_similar_transform(vector<Point2d>& src, const SimilarTransform& transform){
+    double cos_theta = cos(transform.theta);
+    double sin_theta = sin(transform.theta);
     for(int i = 0;i < src.size();i++){
         double x = src[i].x;
         double y = src[i].y;
-        src[i].x = s * (cos_theta * x - sin_theta * y);
-        src[i].y = s * (sin_theta * x + cos_theta * y); 
-    }         
+        src[i].x = a * x - b * y;
+        src[i].y = b * x + a * y; 
+    }
+}
+
+
+
+SimilarTransform:: SimilarTransform(){
+    a = 0;
+    b = 0;
+}
+SimilarTransform SimilarTransform:: inverse(){
+    SimilarTransform transform;
+    double temp = a * a + b * b;
+    transform.a = a / temp;
+    transform.b = -b / temp;
+    return transform; 
 }
 
 
