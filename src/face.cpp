@@ -202,7 +202,16 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
     // deltaShape: difference between current shape and target shape
     // we put x and y coordinates together in one vectors
     vector<vector<double> > deltaShape; 
-    getDeltaShape(deltaShape);
+    // getDeltaShape(deltaShape);
+    for(int i = 0;i < normalize_targets.size();i++){ 
+        vector<double> temp;
+        for(int j = 0;j < normalize_targets[i].size();j++){
+            temp.push_back(normalize_targets[i][j].x);
+            temp.push_back(normalize_targets[i][j].y); 
+        } 
+        deltaShape.push_back(temp);
+    } 
+
     selectedFeatureIndex.clear();
     threhold.clear();
 
@@ -436,7 +445,10 @@ void Face::firstLevelRegression(){
             vector<double> newPixelDensity;
             for(int k = 0;k < currentShape.size();k++){
                 Point2d currLocation;
-                currLocation = featurePixelCoordinates[j] + currentShape[k][nearestKeypointIndex[j]];
+                // currLocation = featurePixelCoordinates[j] + currentShape[k][nearestKeypointIndex[j]];
+                currLocation = apply_similar_transform_point(featurePixelCoordinates[j],current_shape_similar_transform[k].inverse());
+                currLocation = currLocation + currentShape[k][nearestKeypointIndex[j]]  + current_shape_gravity_center[k];
+
                 newCoordinates.push_back(currLocation);
 
 
@@ -613,11 +625,12 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
         for(int j = 0;j < bins[i].size();j++){
             int shapeIndex = bins[i][j];
             if(j == 0){
-                currFernOutput = vectorMinus(targetShape[shapeIndex], currentShape[shapeIndex]);
+                // currFernOutput = vectorMinus(targetShape[shapeIndex], currentShape[shapeIndex]);
+                currFernOutput = normalize_targets[shapeIndex];
             }
             else{
-                currFernOutput = vectorPlus(currFernOutput, vectorMinus(targetShape[shapeIndex],
-                            currentShape[shapeIndex]));
+                // currFernOutput = vectorPlus(currFernOutput, vectorMinus(targetShape[shapeIndex],currentShape[shapeIndex]));
+                currFernOutput = vectorPlus(currFernOutput,normalize_targets[shapeIndex]); 
             }
         }
 
@@ -643,18 +656,21 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
     // update current shape, add the corresponding fern output
     for(int i = 0;i < currentShape.size();i++){
         int binIndex = fernResult[i];
-        currentShape[i] = vectorPlus(currentShape[i],fernOutput[binIndex]);
-
+        
+        vector<Point2d> temp = fernOutput[binIndex];
+        normalize_targets[i] = vectorMinus(normalize_targets[i],temp); 
+        apply_similar_transform(temp,current_shape_similar_transform[i].reverse());
+        currentShape[i] = vectorPlus(currentShape[i],temp);
+        // normalize_targets[i] = vectorMinus(normalize_targets[i],temp); 
+        // currentShape[i] = vectorPlus(currentShape[i],fernOutput[binIndex]);
         // there exists cases that after update, the new keypoint coordinates
         // exceed the range of image, I am not quite sure about how to deal with
         // this image  
         for(int j = 0;j < currentShape[i].size();j++){
             if(currentShape[i][j].x > averageWidth-1){
-                // cout<<"Extend..."<<endl;
                 currentShape[i][j].x = averageWidth-1;
             }
             if(currentShape[i][j].y > averageHeight-1){
-                // cout<<"Extend..."<<endl;
                 currentShape[i][j].y = averageHeight-1;
             }
             if(currentShape[i][j].x < 0){
@@ -994,6 +1010,15 @@ void Face:: apply_similar_transform(vector<Point2d>& src, const SimilarTransform
         src[i].y = b * x + a * y; 
     }
 }
+
+Point2d Face:: apply_similar_transform_point(const Point2d& point, const SimilarTransform& transform){
+    Point2d result(0,0);
+    result.x = point.x * transform.a - point.y * transform.b;
+    result.y = point.x * transform.b + point.y * transform.a;
+
+    return result;
+}
+
 
 Point2d Face::get_mean(const vector<Point2d>& point){
     Point2d result(0,0);
