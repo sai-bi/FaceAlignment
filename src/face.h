@@ -1,6 +1,6 @@
 #ifndef FACE_H
 #define FACE_H
-const double PI =  3.141592653589793238463
+const double PI =  3.141592653589793238463;
 #include <iostream>
 #include <cmath>
 #include <fstream>
@@ -22,6 +22,14 @@ using namespace std;
 
 #define MAXNUM numeric_limits<double>::max(); 
 #define MINNUM numeric_limits<double>::min();
+
+class SimilarTransform{
+    public:
+        double a;
+        double b;
+        SimilarTransform inverse();
+        SimilarTransform();
+};
 
 class Face{
     public:
@@ -63,13 +71,15 @@ class Face{
         // normalize targets
         vector<vector<Point2d> > normalize_targets;
         // similar transform for normalize targets
-        // vector<SimilarTransform> targets_similar_transform;
+        vector<SimilarTransform> targets_similar_transform;
 
-        vector<vector<Point2d> > current_shape_similar_transform;         
+        vector<SimilarTransform> current_shape_similar_transform;         
 
         //
         vector<Point2d> target_gravity_center; 
         vector<Point2d> current_shape_gravity_center; 
+        
+        vector<vector<Point2d> > augment_target_shapes;
         //  
 
         Face();
@@ -105,23 +115,17 @@ class Face{
         void readParameters();
         void secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape, 
                 const vector<Point2d>& inputPixelCoordinates,const vector<int>& inputNearestIndex,
-                const Mat& testImg);
+                const Mat& testImg, const Point2d& mean_point,SimilarTransform& transform);
 
         void apply_similar_transform(vector<Point2d>& src, const SimilarTransform& transform);
         void calculate_mean_shape();
         void scale_shape(vector<Point2d>& input_shape);
         double cal_vector_norm(const vector<Point2d>& input_vector);
         void align(const vector<Point2d>& src, const vector<Point2d>& dst, SimilarTransform& transform);
-
+        Point2d get_mean(const vector<Point2d>& point);
+        Point2d apply_similar_transform_point(const Point2d& point, const SimilarTransform& transform);
 };
 
-class SimilarTransform{
-    public:
-        double a;
-        double b;
-        SimilarTransform inverse();
-        SimilarTransform();
-};
 
 
 #endif

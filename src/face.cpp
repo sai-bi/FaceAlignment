@@ -16,32 +16,39 @@ void Face::run(){
 
     // calculate mean shape;
     cout<<"Get mean shape..."<<endl;
-    
+
     preprocessing();
-
-    calculate_mean_shape();
-
-    
-    double min_x = 1e10;
-    double max_x = -1e10;
-    for(int i = 0;i < meanShape.size();i++){
-        if(meanShape[i].x < min_x){
-            min_x = meanShape[i].x;
-        }
-        if(meanShape[i].x > max_x){
-            max_x = meanShape[i].x;
-        }
-    }
-        
-    pixel_range = 0.12 * (max_x - min_x); 
-
 
     // PROGRAM MODE: 0 for training, 1 for testing
     if(mode == 0){
+        calculate_mean_shape();
+        double min_x = 1e10;
+        double max_x = -1e10;
+        for(int i = 0;i < meanShape.size();i++){
+            if(meanShape[i].x < min_x){
+                min_x = meanShape[i].x;
+            }
+            if(meanShape[i].x > max_x){
+                max_x = meanShape[i].x;
+            }
+        }
+
+        pixel_range = 0.12 * (max_x - min_x); 
+        cout<<pixel_range<<endl;
         cout<<"First level regression..."<<endl;
         firstLevelRegression();
     }
     else if(mode == 1){
+        // calculate_mean_shape();
+        ifstream fin;
+        fin.open("./trainingoutput/meanshape.txt");
+        meanShape.clear();
+        double x = 0;
+        double y = 0;
+        while(fin>>x>>y){
+            meanShape.push_back(Point2d(x,y));
+        }
+        fin.close(); 
         faceTest();
     }
 }
@@ -136,24 +143,27 @@ void Face::preprocessing(){
             targetShape[i][j].y = y;  
         }
     }
-    
+
     for(int i = 0;i < targetShape.size();i++){
         Point2d temp = get_mean(targetShape[i]);
         target_gravity_center.push_back(temp);
-        
+
         for(int j = 0;j  < targetShape[i].size();j++){
             targetShape[i][j] = targetShape[i][j] - temp;
         } 
     }
-    
+
     RNG random_generator(getTickCount());
     for(int i = 0;i < imgNum;i++){
         int index = 0;
-        do{
-            index = random_generator.uniform(0,imgNum);
-        }while(index == i);
-        currentShape.push_back(targetShape[index]);
-        current_shape_gravity_center.push_back(target_gravity_center[index]);
+        for(int j = 0;j < 20;j++){
+            do{
+                index = random_generator.uniform(0,imgNum);
+            }while(index == i);
+            currentShape.push_back(targetShape[index]);
+            current_shape_gravity_center.push_back(target_gravity_center[index]);
+            augment_target_shapes.push_back(targetShape[i]);
+        }
     }
 
 }
@@ -162,11 +172,11 @@ void Face::getFeaturePixelLocation(){
     // sample a number of pixels from the face images
     // get their coordinates related to the nearest face keypoints
     // random face pixels selected
-    
+
     featurePixelCoordinates.clear();
     nearestKeypointIndex.clear(); 
     RNG random_generator(getTickCount());
-    
+
     for(int i = 0;i < featurePixelNum;i++){
         double x = random_generator.uniform(-pixel_range,pixel_range);
         double y = random_generator.uniform(-pixel_range,pixel_range); 
@@ -279,7 +289,7 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
 
                 if(abs(temp4) > highest){
                     highest = abs(temp4);
-                    
+
                     selectedIndex1 = j;
                     selectedIndex2 = k;
                 }
@@ -288,25 +298,33 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
 
 
         selectedFeatureIndex.push_back(Point2i(selectedIndex1,selectedIndex2));
-            
-        vector<double> densityDiff;
-        for(int j = 0;j < imgNum;j++){
+
+        //vector<double> densityDiff;
+        double max_diff = -1; 
+        for(int j = 0;j < pixelDensity[0].size();j++){
             double temp1 = pixelDensity[selectedIndex1][j];
             double temp2 = pixelDensity[selectedIndex2][j];
-            densityDiff.push_back(temp1 - temp2);
+            // densityDiff.push_back(temp1 - temp2);
+            if(abs(temp1-temp2) > max_diff){
+                max_diff = abs(temp1-temp2);
+            }
         } 
-    
+
         double best_thresh = -1;
         double best_var = -1;
         RNG rg(getTickCount());
+        
+        best_thresh = rg.uniform(-0.2 * max_diff , 0.2 * max_diff);
+        
+        /*
         for(int j = 0;j < 100;j++){
-            double thresh = densityDiff[rg.uniform(0,imgNum)]; 
+            double thresh = densityDiff[rg.uniform(0,densityDiff.size())]; 
             int n1 = 0;
             int n2 = 0;
             double m1 = 0;
             double m2 = 0;
-            
-            for(int k = 0;k < imgNum;k++){
+
+            for(int k = 0;k < densityDiff.size();k++){
                 if(densityDiff[k] >= thresh){
                     m1 = m1 + projectResult[k];
                     n1++; 
@@ -322,8 +340,8 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
 
             double v1 = 0;
             double v2 = 0;
-            
-            for(int k = 0;k < imgNum;k++){
+
+            for(int k = 0;k < densityDiff.size();k++){
                 if(densityDiff[k] >= thresh){
                     v1 = v1 + pow(projectResult[k] - m1, 2.0);
                 }
@@ -331,7 +349,7 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
                     v2 = v2 + pow(projectResult[k]- m2, 2.0);
                 }
             }
-            
+
             double v = n1 * log(v1/n1+1e-6) + n2 * log(v2/n2+1e-6);
 
             if(best_var < 0 || best_var > v){
@@ -339,6 +357,7 @@ void Face::extractFeature(const Mat& covariance,const vector<vector<double> >& p
                 best_thresh = thresh;
             }
         }
+        */
 
         threhold.push_back(best_thresh); 
     } 
@@ -384,7 +403,8 @@ void Face::getRandomDirection(vector<double>& randomDirection){
     RNG random_generator(getTickCount());
     for(int i = 0;i < 2 * keypointNum;i++){
         // int temp = rand()%1000 + 1; 
-        double temp = random_generator.uniform(-1.1,1.1);
+        // double temp = random_generator.uniform(-1.1,1.1);
+        double temp = random_generator.gaussian(1);
         randomDirection.push_back(temp);
         sum = sum + temp * temp;
     }
@@ -403,11 +423,11 @@ void Face::firstLevelRegression(){
     // first initial currentShape
     // RNG random_generator(getTickCount());
     // for(int i = 0;i < targetShape.size();i++){
-        // int index = random_generator.uniform(0,imgNum);
-        // currentShape.push_back(targetShape[index]);
+    // int index = random_generator.uniform(0,imgNum);
+    // currentShape.push_back(targetShape[index]);
     // }
     for(int i = 0;i < currentShape.size();i++){
-        normalize_targets.push_back(vectorMinus(targetShape[i],currentShape[i]));
+        normalize_targets.push_back(vectorMinus(augment_target_shapes[i],currentShape[i]));
     }    
 
 
@@ -415,18 +435,32 @@ void Face::firstLevelRegression(){
         cout<<endl;
         cout<<"First level regression: "<<i<<endl;
         cout<<endl;
-        
+
         current_shape_similar_transform.clear(); 
+        // target_similar_transform.clear();
         // normalize targets
         for(int j = 0;j < currentShape.size();j++){ 
             SimilarTransform transform;
             align(currentShape[i], meanShape, transform);
             current_shape_similar_transform.push_back(transform);
-        } 
-    
+        }
+
+        // normalize_targets.clear();
+
+        // for(int i = 0;i < currentShape.size();i++){
+        // normalize_targets.push_back(vectorMinus(targetShape[i],currentShape[i]));
+        // }
+
+
+        // for(int j = 0;j < normalize_targets.size();j++){
+        // SimilarTransform transform;
+        // align(normalize_targets[j],meanShape,transform);
+        // target_similar_transform.push_back(transform); 
+        // }
+
         if(i == 0){
             for(int j = 0;j < normalize_targets.size();j++){
-                apply_similar_transform.push_back(normalize_targets[j],current_shape_similar_transform[j]);
+                apply_similar_transform(normalize_targets[j],current_shape_similar_transform[j]);
             }                        
         }
 
@@ -465,7 +499,7 @@ void Face::firstLevelRegression(){
                     currLocation.x = 0;
 
 
-                Vec3b color = faceImages[k].at<Vec3b>((int)(currLocation.y),(int)(currLocation.x));
+                Vec3b color = faceImages[k/20].at<Vec3b>((int)(currLocation.y),(int)(currLocation.x));
                 int b = color.val[0];
                 int g = color.val[1];
                 int r = color.val[2];
@@ -490,7 +524,7 @@ void Face::firstLevelRegression(){
                 double temp2 = getCovariance(pixelDensity[k],pixelDensity[k]);
                 double temp3 = 2 * getCovariance(pixelDensity[j],pixelDensity[k]);
                 double temp = sqrt(temp1 + temp2 - temp3);
-               
+
                 if(abs(temp) == 0){
                     cout<<pixelDensity[j][0]<<" "<<pixelDensity[j][1]<<endl; 
                     cout<<pixelDensity[k][0]<<" "<<pixelDensity[k][1]<<endl; 
@@ -509,6 +543,7 @@ void Face::secondLevelRegression(const Mat& covariance,const vector<vector<doubl
     for(int i = 0;i < secondLevelNum;i++){
         // select best feature
         // selectedFeatureIndex records the feture pairs we select, 
+        cout<<"Construct fern "<<i<<"...."<<endl;
         vector<Point2i> selectedFeatureIndex;  
         vector<double> thresh;
         extractFeature(covariance,pixelDensity,selectedFeatureIndex,thresh); 
@@ -577,9 +612,9 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
     ofstream fout;
     fout.open(currentFileName,std::ofstream::out | std::ofstream::app);
 
-  
 
-    
+
+
     for(int i = 0;i < thresh.size();i++){
         fout<<thresh[i]<<" ";
     }
@@ -599,7 +634,7 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
                 tempResult = tempResult + int(pow(2.0,j)); 
             }
         }
-        
+
         bins[tempResult].push_back(i);    
         fernResult.push_back(tempResult);
 
@@ -656,30 +691,32 @@ void Face::constructFern(const vector<Point2i>& selectedFeatureIndex,
     // update current shape, add the corresponding fern output
     for(int i = 0;i < currentShape.size();i++){
         int binIndex = fernResult[i];
-        
+
         vector<Point2d> temp = fernOutput[binIndex];
         normalize_targets[i] = vectorMinus(normalize_targets[i],temp); 
-        apply_similar_transform(temp,current_shape_similar_transform[i].reverse());
+        apply_similar_transform(temp,current_shape_similar_transform[i].inverse());
         currentShape[i] = vectorPlus(currentShape[i],temp);
         // normalize_targets[i] = vectorMinus(normalize_targets[i],temp); 
         // currentShape[i] = vectorPlus(currentShape[i],fernOutput[binIndex]);
         // there exists cases that after update, the new keypoint coordinates
         // exceed the range of image, I am not quite sure about how to deal with
         // this image  
-        for(int j = 0;j < currentShape[i].size();j++){
-            if(currentShape[i][j].x > averageWidth-1){
-                currentShape[i][j].x = averageWidth-1;
-            }
-            if(currentShape[i][j].y > averageHeight-1){
-                currentShape[i][j].y = averageHeight-1;
-            }
-            if(currentShape[i][j].x < 0){
-                currentShape[i][j].x = 0;
-            } 
-            if(currentShape[i][j].y < 0){
-                currentShape[i][j].y = 0;
-            }
-        } 
+        /*
+           for(int j = 0;j < currentShape[i].size();j++){
+           if(currentShape[i][j].x > averageWidth-1){
+           currentShape[i][j].x = averageWidth-1;
+           }
+           if(currentShape[i][j].y > averageHeight-1){
+           currentShape[i][j].y = averageHeight-1;
+           }
+           if(currentShape[i][j].x < 0){
+           currentShape[i][j].x = 0;
+           } 
+           if(currentShape[i][j].y < 0){
+           currentShape[i][j].y = 0;
+           }
+           } 
+           */
     }
 }
 
@@ -743,8 +780,13 @@ void Face::faceTest(){
     ifstream fin;
     fin.open("./trainingoutput/featurePixelCoordinates.txt");
 
-    string testImageName = "./download.jpeg";
-    Mat testImg = imread(testImageName.c_str());    
+    string testImageName = "./test3.jpg";
+    Mat testImg = imread(testImageName.c_str());
+
+
+    Mat testImg2 = imread("./10.jpg");    
+
+
     // int testIndex = 491;
     // Mat testImg = faceImages[testIndex];
 
@@ -756,10 +798,27 @@ void Face::faceTest(){
     double y = 0;
     char temp;
 
-
     // vector<Point2d> testCurrentShape = meanShape ;  
-    vector<Point2d> testCurrentShape = targetShape[4];
+    vector<Point2d> testCurrentShape = targetShape[100];
+
+    Point2d mean_point = target_gravity_center[100];
+
+    Mat testImg3 = testImg.clone(); 
+    for(int i = 0;i < testCurrentShape.size();i++){
+        circle(testImg3,testCurrentShape[i] + mean_point,3,Scalar(255,0,0), -1, 8,0); 
+    }
+    imshow("output",testImg3);
+    waitKey(0);
+
+
+
+
     for(int i = 0;i < firstLevelNum;i++){
+        SimilarTransform transform;
+        align(testCurrentShape,meanShape,transform);
+        // apply_similar_transform(testCurrentShape,transform);
+
+
         cout<<"Level: "<<i<<endl;
         vector<Point2d> inputPixelCoordinates;
         vector<int> inputNearestIndex;
@@ -772,17 +831,31 @@ void Face::faceTest(){
             fin>>x;
             inputNearestIndex.push_back(int(x)); 
         }
-        secondLevelTest(i,testCurrentShape,inputPixelCoordinates, inputNearestIndex, testImg);
+        secondLevelTest(i,testCurrentShape,inputPixelCoordinates, inputNearestIndex, testImg, mean_point, transform);
     }
+
+    fin.close();
 
     Mat testImg1 = testImg.clone();
     for(int i = 0;i < meanShape.size();i++){
-        circle(testImg1,meanShape[i],3,Scalar(0,0,255),-1,8,0);
+        circle(testImg1,meanShape[i] + Point2d(100,100),3,Scalar(0,0,255),-1,8,0);
     }
     imshow("initial",testImg1);
 
+
+
+    SimilarTransform transform;
+    align(targetShape[46], meanShape, transform);
+
+    cout<<transform.a<<endl;
+    cout<<transform.b<<endl;
+
+
+
+
+
     for(int i = 0;i < testCurrentShape.size();i++){
-        circle(testImg,testCurrentShape[i],3,Scalar(255,0,0), -1, 8,0); 
+        circle(testImg,testCurrentShape[i] + mean_point,3,Scalar(255,0,0), -1, 8,0); 
     }
     imshow("output",testImg);
     waitKey(0);
@@ -790,7 +863,7 @@ void Face::faceTest(){
 
 void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape, 
         const vector<Point2d>& inputPixelCoordinates,const vector<int>& inputNearestIndex,
-        const Mat& testImg){
+        const Mat& testImg, const Point2d& mean_point, SimilarTransform& transform){
     ifstream fin;
     string fileName = "./trainingoutput/" + to_string(currLevelNum) + ".txt"; 
     fin.open(fileName);
@@ -799,7 +872,9 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
 
     for(int i = 0;i < inputPixelCoordinates.size();i++){
         Point2d temp;
-        temp = inputPixelCoordinates[i] + testCurrentShape[inputNearestIndex[i]];    
+        // temp = inputPixelCoordinates[i] + testCurrentShape[inputNearestIndex[i]];    
+        temp = apply_similar_transform_point(inputPixelCoordinates[i], transform.inverse());
+        temp = temp + testCurrentShape[inputNearestIndex[i]] + mean_point;
         if(temp.y > averageHeight-1)
             temp.y = averageHeight-1;
         if(temp.x > averageWidth-1) 
@@ -832,9 +907,9 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
         int binNum = pow(2.0, featureNumInFern);
 
         // for(int i = 0;i < binNum + 1;i++){
-            // int temp;
-            // fin>>temp;
-            // threhold.push_back(temp);
+        // int temp;
+        // fin>>temp;
+        // threhold.push_back(temp);
         // }
         vector<double> thresh;
         for(int j = 0;j < featureNumInFern;j++){
@@ -869,39 +944,54 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
         }
 
         // for(int j = 0;j < binNum;j++){
-            // if(binIndex >= threhold[j] && binIndex < threhold[j+1]){
-                // binIndex = j;
-                // break;
-            // }
+        // if(binIndex >= threhold[j] && binIndex < threhold[j+1]){
+        // binIndex = j;
+        // break;
         // }
-        
+        // }
+
 
 
 
         // Mat tempImg = testImg.clone();
-        testCurrentShape = vectorPlus(testCurrentShape, fernOutput[binIndex]);  
+        vector<Point2d> temp = fernOutput[binIndex];
+
+        apply_similar_transform(temp,transform.inverse());
+
+
+
+
+        testCurrentShape = vectorPlus(testCurrentShape,temp);  
         // for(int i = 0;i < testCurrentShape.size();i++){
         // circle(tempImg,testCurrentShape[i],3,Scalar(255,0,0), -1, 8,0); 
         // }
         // imshow("test",tempImg);
         // waitKey(1);
+        // Mat testImg1 = testImg.clone(); 
+        // for(int i = 0;i < testCurrentShape.size();i++){
+        // circle(testImg1,testCurrentShape[i] + mean_point,3,Scalar(255,0,0), -1, 8,0); 
+        // }
+        // imshow("output",testImg1);
+        // waitKey(1);
 
-        for(int j = 0;j < testCurrentShape.size();j++){
-            if(testCurrentShape[j].x > averageWidth-1){
-                // cout<<"Extend..."<<endl;
-                testCurrentShape[j].x = averageWidth-1;
-            }
-            if(testCurrentShape[j].y > averageHeight-1){
-                // cout<<"Extend..."<<endl;
-                testCurrentShape[j].y = averageHeight-1;
-            }
-            if(testCurrentShape[j].x < 0){
-                testCurrentShape[j].x = 0;
-            } 
-            if(testCurrentShape[j].y < 0){
-                testCurrentShape[j].y = 0;
-            }
-        }
+        /*    for(int j = 0;j < testCurrentShape.size();j++){ */
+        // if(testCurrentShape[j].x > averageWidth-1){
+        // cout<<"Extend..."<<endl;
+        // testCurrentShape[j].x = averageWidth-1;
+        // }
+        // if(testCurrentShape[j].y > averageHeight-1){
+        // cout<<"Extend..."<<endl;
+        // testCurrentShape[j].y = averageHeight-1;
+        // }
+        // if(testCurrentShape[j].x < 0){
+        // cout<<"Extend..."<<endl;
+        // testCurrentShape[j].x = 0;
+        // } 
+        // if(testCurrentShape[j].y < 0){
+        // cout<<"Extend..."<<endl;
+        // testCurrentShape[j].y = 0;
+        // }
+        /* } */
     }
     fin.close();
 
@@ -912,12 +1002,14 @@ void Face::secondLevelTest(int currLevelNum, vector<Point2d>& testCurrentShape,
 void Face::calculate_mean_shape(){
     // center each shape at origin
     vector<vector<Point2d> > input_shapes = currentShape;
+
+    cout<<"Calculate mean shape..."<<endl;
     for(int i = 0;i < input_shapes.size();i++){
         // double mean_x = 0;
         // double mean_y = 0; 
         // for(int j = 0;j < input_shapes[i].size();j++){
-            // mean_x += input_shapes[i][j].x;
-            // mean_y += input_shapes[i][j].y;     
+        // mean_x += input_shapes[i][j].x;
+        // mean_y += input_shapes[i][j].y;     
         // }
         // mean_x = mean_x / input_shapes[i].size();
         // mean_y = mean_y / input_shapes[i].size();
@@ -932,17 +1024,20 @@ void Face::calculate_mean_shape(){
     // get the mean shape
     vector<Point2d> new_mean_shape;
     vector<Point2d> current_mean_shape;
-    scale_shape(input_shapes[0]);
+    // scale_shape(input_shapes[0]);
     new_mean_shape = input_shapes[0];
-     
+    vector<Point2d> x0 = new_mean_shape; 
     do{
+        cout<<"iteration..."<<endl;
         current_mean_shape = new_mean_shape;
         for(int i = 0;i < new_mean_shape.size();i++){
             new_mean_shape[i].x = 0;
             new_mean_shape[i].y = 0;
         }
         for(int i = 0;i < input_shapes.size();i++){
-            align(input_shapes[i], current_mean_shape);      
+            SimilarTransform transform;
+            align(input_shapes[i], current_mean_shape,transform);
+            apply_similar_transform(input_shapes[i],transform);     
             new_mean_shape = vectorPlus(new_mean_shape,input_shapes[i]);
         } 
         for(int i = 0;i < new_mean_shape.size();i++){
@@ -951,10 +1046,18 @@ void Face::calculate_mean_shape(){
         SimilarTransform transform;
         align(new_mean_shape,x0,transform);
         apply_similar_transform(new_mean_shape,transform);
-        scale_shape(new_mean_shape);
-    }while(cal_vector_norm(vectorMinus(current_mean_shape - new_mean_shape)) > 1e-10);
-    
+        // scale_shape(new_mean_shape);
+    }while(cal_vector_norm(vectorMinus(current_mean_shape,new_mean_shape)) > 1e-10);
+
     meanShape = current_mean_shape;
+
+    cout<<"Finish calculate meanshape..."<<endl;
+    ofstream fout;
+    fout.open("./trainingoutput/meanshape.txt");
+    for(int i = 0;i < meanShape.size();i++){
+        fout<<meanShape[i].x <<"    "<<meanShape[i].y<<endl; 
+    }
+    fout.close();
 }
 
 // scale each shape x such that ||x|| = 1
@@ -973,8 +1076,8 @@ void Face::scale_shape(vector<Point2d>& input_shape){
 double Face::cal_vector_norm(const vector<Point2d>& input_vector){
     double sum = 0;
     for(int i = 0;i < input_vector.size();i++){
-        sum += input_vector[i].x;
-        sum += input_vector[i].y; 
+        sum += pow(input_vector[i].x,2.0);
+        sum += pow(input_vector[i].y,2.0); 
     }
     return sqrt(sum);
 }
@@ -991,18 +1094,24 @@ void Face::align(const vector<Point2d>& src, const vector<Point2d>& dst, Similar
         part1 += (src[i].y * dst[i].y);
         part2 += (src[i].x * dst[i].y - src[i].y * dst[i].x);
     } 
-    double part3 = pow(norm_vector(src),2.0);
+    double part3 = pow(cal_vector_norm(src),2.0);
 
     a = part1 / part3;
     b = part2 / part3;
 
     transform.a = a;
-    transform.b = b; 
+    transform.b = b;
+
+    // transform.a = 1;
+    // transform.b = 0; 
+
 }
 
 void Face:: apply_similar_transform(vector<Point2d>& src, const SimilarTransform& transform){
-    double cos_theta = cos(transform.theta);
-    double sin_theta = sin(transform.theta);
+    // double cos_theta = cos(transform.theta);
+    // double sin_theta = sin(transform.theta);
+    double a = transform.a;
+    double b = transform.b;
     for(int i = 0;i < src.size();i++){
         double x = src[i].x;
         double y = src[i].y;
@@ -1028,6 +1137,7 @@ Point2d Face::get_mean(const vector<Point2d>& point){
     } 
     result.x /= point.size();
     result.y /= point.size();
+    // cout<<result.x<<endl;
     return result;
 }
 
