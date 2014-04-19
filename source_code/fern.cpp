@@ -182,12 +182,13 @@ void Fern::read(ifstream& fin){
     fin>>landmark_num_;
 	selected_x_.create(pixel_pair_num_in_fern_,2);
     selected_y_.create(pixel_pair_num_in_fern_,2);
-    nearest_keypoint_index_.create(pixel_pair_num_in_fern_,1);
+    nearest_keypoint_index_.create(pixel_pair_num_in_fern_,2);
     threshold_.create(pixel_pair_num_in_fern_,1);
     for(int i = 0;i < pixel_pair_num_in_fern_;i++){
         fin>>selected_x_(i,0)>>selected_y_(i,0)
             >>selected_x_(i,1)>>selected_y_(i,1);
-        fin>>nearest_keypoint_index_(i);
+        fin>>nearest_keypoint_index_(i,0);
+        fin>>nearest_keypoint_index_(i,1);
         fin>>threshold_(i);
     }
     int bin_num = pow(2.0,pixel_pair_num_in_fern_);
@@ -214,7 +215,8 @@ void Fern::write(ofstream& fout){
         fout<<pixel_coordinates_(index1,0)<<" "<<pixel_coordinates_(index1,1)<<" "
             <<pixel_coordinates_(index2,0)<<" "<<pixel_coordinates_(index2,1)
             <<endl;
-        fout<<(nearest_keypoint_index_(i))<<endl;
+        fout<<(nearest_keypoint_index_(index1))<<endl;
+        fout<<(nearest_keypoint_index_(index2))<<endl;
         fout<<(threshold_(i))<<endl;
     }
     for(int i = 0;i < bin_output_.size();i++){
@@ -233,21 +235,22 @@ void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape,
         const Mat_<double>& invert_normalized_matrix){  
     int bin_index = 0;
     for(int i = 0;i < pixel_pair_num_in_fern_;i++){
-        int keypoint_index = nearest_keypoint_index_(i);
+        int keypoint_index1 = nearest_keypoint_index_(i,0);
+        int keypoint_index2 = nearest_keypoint_index_(i,1);
         Mat_<double> coordinates(1,2);
         Mat_<double> pixel_1;
         Mat_<double> pixel_2;
         coordinates(0,0) = selected_x_(i,0);
         coordinates(0,1) = selected_y_(i,0);
         pixel_1 = coordinates * invert_normalized_matrix;
-        pixel_1(0,0) += shape(keypoint_index,0);
-        pixel_1(0,1) += shape(keypoint_index,1);
+        pixel_1(0,0) += shape(keypoint_index1,0);
+        pixel_1(0,1) += shape(keypoint_index1,1);
 
         coordinates(0,0) = selected_x_(i,1);
         coordinates(0,1) = selected_y_(i,1); 
         pixel_2 = coordinates * invert_normalized_matrix;
-        pixel_2(0,0) += shape(keypoint_index,0);
-        pixel_2(0,1) += shape(keypoint_index,1);
+        pixel_2(0,0) += shape(keypoint_index1,0);
+        pixel_2(0,1) += shape(keypoint_index2,1);
 
 		int x = pixel_1(0,0);
 		int y = pixel_1(0,1);

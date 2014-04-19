@@ -22,13 +22,14 @@ void train(const vector<Mat_<uchar> >& input_images,
         Mat_<uchar> temp = input_images[i].clone(); 
         for(int j = 0;j < initial_number;j++){
             images.push_back(temp);
-            augment_target_shapes.push_back(target_shapes[i]);
+            // augment_target_shapes.push_back(target_shapes[i]);
             int index = 0;
             do{
                 index = random_generator.uniform(0,input_images.size()); 
             }while(index == i);
             // augment_current_shapes.push_back(mean_shape);
             augment_current_shapes.push_back(target_shapes[index]);
+            augment_target_shapes.push_back(target_shapes[i]);
         }
     }
 

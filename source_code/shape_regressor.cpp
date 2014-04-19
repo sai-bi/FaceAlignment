@@ -77,7 +77,6 @@ void ShapeRegressor::calcuate_normalized_matrix(vector<Mat_<double> >& normalize
         normalize_matrix.push_back(output_matrix);
     } 
 }
-
 /**
  * Read training model from file
  * @param fin file operator 
@@ -135,30 +134,7 @@ void ShapeRegressor::save(const char* file_name){
 }
 
 
-void ShapeRegressor::calcSimil(const Mat_<double> &src,const Mat_<double> &dst,
-        double &a,double &b,double &tx,double &ty){
-    Mat_<double> H = Mat_<double>::zeros(4,4),g = Mat_<double>::zeros(4,1),p(4,1);
-    for(int i = 0; i < src.rows/2; i++){
-        double x1 = src(2*i),y1 = src(2*i+1);
-        double x2 = dst(2*i),y2 = dst(2*i+1);
-        H(0,0) += x1*x1 + y1*y1; H(0,2) += x1; H(0,3) += y1;
-        g(0,0) += x1*x2 + y1*y2; g(1,0) += x1*y2 - y1*x2;
-        g(2,0) += x2; g(3,0) += y2;
-    }
-    H(1,1) = H(0,0); H(1,2) = H(2,1) = -1.0*(H(3,0) = H(0,3));
-    H(1,3) = H(3,1) = H(2,0) = H(0,2); H(2,2) = H(3,3) = src.rows/2;
-    solve(H,g,p,DECOMP_CHOLESKY);
-    a = p(0,0); b = p(1,0); tx = p(2,0); ty = p(3,0); return;
-}
 
-void ShapeRegressor::invSimil(double a1,double b1,double tx1,double ty1,
-        double& a2,double& b2,double& tx2,double& ty2){
-    Mat_<double> M = (cv::Mat_<double>(2,2) << a1, -b1, b1, a1);
-    Mat_<double> N = M.inv(cv::DECOMP_SVD); a2 = N(0,0); b2 = N(1,0);
-    tx2 = -1.0*(N(0,0)*tx1 + N(0,1)*ty1);
-    ty2 = -1.0*(N(1,0)*tx1 + N(1,1)*ty1); 
-    return;
-}
 
 
 

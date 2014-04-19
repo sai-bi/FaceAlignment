@@ -36,7 +36,7 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     // the corresponding nearest keypoint index of each selected pixel
 	Mat_<int> nearest_keypoint_index(pixel_pair_num,1);
     RNG random_generator(getTickCount());
-    primary_fern_.resize(second_level_num);
+    // primary_fern_.resize(second_level_num);
     int landmark_num = mean_shape.rows;   
     int training_num = images.size();
     int image_width = images[0].cols;
