@@ -2,11 +2,14 @@
 % Face++ Matlab SDK demo
 %
 
-clc; clear;
 % Load an image, input your API_KEY & API_SECRET
-img = '17.jpg';
+img = '12.jpg';
+
 API_KEY = 'd45344602f6ffd77baeab05b99fb7730';
 API_SECRET = 'jKb9XJ_GQ5cKs0QOk6Cj1HordHFBWrgL';
+
+% API_KEY = 'c879e3d132f2aa5db9ba2df8dad18783';
+% API_SECRET = 'bXW_9L-_dNEEG9iwQ4PvlM5qxiS8fYvk';
 
 % If you have chosen Amazon as your API sever and 
 % changed API_KEY&API_SECRET into yours, 
@@ -20,7 +23,7 @@ rst = detect_file(api, img, 'all');
 img_width = rst{1}.img_width;
 img_height = rst{1}.img_height;
 face = rst{1}.face;
-fprintf('Totally %d faces detected!\n', length(face));
+% % fprintf('Totally %d faces detected!\n', length(face));
 
 im = imread(img);
 imshow(im);
@@ -48,6 +51,10 @@ for i = 1 : length(face)
         scatter(pt.x * img_width / 100, pt.y * img_height / 100, 100, 'g.');
     end
 end
+
+img = im;
+
+
 
 
 

@@ -1,10 +1,13 @@
-%
-% Face++ Matlab SDK demo
-%
+function test(hObject,eventdata,vid)
+% start(vid);
+% im = getdata(vid,1);
+% im = rgb2gray(im);
+% imshow(im);
+img = getsnapshot(vid);
+img = ycbcr2rgb(img);
+imwrite(img,'test.jpg');
 
-clc; clear;
-% Load an image, input your API_KEY & API_SECRET
-img = '17.jpg';
+img = 'test.jpg';
 API_KEY = 'd45344602f6ffd77baeab05b99fb7730';
 API_SECRET = 'jKb9XJ_GQ5cKs0QOk6Cj1HordHFBWrgL';
 
@@ -20,9 +23,10 @@ rst = detect_file(api, img, 'all');
 img_width = rst{1}.img_width;
 img_height = rst{1}.img_height;
 face = rst{1}.face;
-fprintf('Totally %d faces detected!\n', length(face));
+% fprintf('Totally %d faces detected!\n', length(face));
 
 im = imread(img);
+figure;
 imshow(im);
 hold on;
 
@@ -33,9 +37,9 @@ for i = 1 : length(face)
     w = face_i.position.width / 100 * img_width;
     h = face_i.position.height / 100 * img_height;
     
-    %rectangle('Position', ...
-    %    [center.x * img_width / 100 -  w/2, center.y * img_height / 100 - h/2, w, h], ...
-    %    'Curvature', 0.4, 'LineWidth',2, 'EdgeColor', 'blue');
+    rectangle('Position', ...
+        [center.x * img_width / 100 -  w/2, center.y * img_height / 100 - h/2, w, h], ...
+        'Curvature', 0.4, 'LineWidth',2, 'EdgeColor', 'blue');
     
     % Detect facial key points
     rst2 = api.landmark(face_i.face_id, '83p');
@@ -49,5 +53,4 @@ for i = 1 : length(face)
     end
 end
 
-
-
+end

@@ -1,0 +1,27 @@
+@charset "utf-8";
+
+/**
+ * demo.css
+ *
+ * @author 
+ * @version 2014/05/05
+ */
+html,body{margin:0; padding:0; }
+
+body{
+    background-image:url('image/ricepaper_v3.png');
+	background-repeat:repeat;
+}
+
+#screenshot-stream{
+    width: 500px;
+    height: 500px;
+    background: white;
+}
+
+
+#screenshot{
+    width: 500px;
+    height: 500px;
+    background: white;
+}
