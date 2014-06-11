@@ -19,7 +19,8 @@ int main(){
     int average_width = 0;
 
     cout<<"Read images..."<<endl;
-
+    
+    /*
     for(int i = 0;i < img_num;i++){
         string image_name = "./../data/LFPW/lfpwFaces/";
         image_name = image_name + to_string(i+1) + ".jpg";
@@ -35,6 +36,7 @@ int main(){
 	for(int i = 0;i < img_num;i++){
 		resize(images[i],images[i],Size(average_width,average_height));
 	}
+    */
 
     ifstream fin;
     fin.open("./../data/LFPW/keypointsInfor.txt"); 

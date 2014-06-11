@@ -49,18 +49,18 @@ void detectAndDisplay(Mat frame,string fileName,const vector<double>& xCor, cons
 
     cout<<cropRectangle.x<<" "<<cropRectangle.y<<" "<<cropRectangle.width<<" "<<cropRectangle.height<<endl;
 
-    if(cropRectangle.width < 0 || cropRectangle.height < 0){
-        validImageCount--;
-        return;
-    }
+    // if(cropRectangle.width < 0 || cropRectangle.height < 0){
+        // validImageCount--;
+        // return;
+    // }
 
-    try{
-        img(cropRectangle).copyTo(croppedImage);
-    }catch(int e){
-        validImageCount--;
-        return;
-    }
-    imwrite(fileName,croppedImage);
+    // try{
+        // img(cropRectangle).copyTo(croppedImage);
+    // }catch(int e){
+        // validImageCount--;
+        // return;
+    // }
+    imwrite(fileName,img);
 
     fout<<cropRectangle.x<<" "<<cropRectangle.y
         <<" "
