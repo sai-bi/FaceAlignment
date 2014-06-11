@@ -42,10 +42,10 @@ void detectAndDisplay(Mat frame,string fileName,const vector<double>& xCor, cons
     double maxX = *max_element(xCor.begin(),xCor.end());
     double maxY = *max_element(yCor.begin(),yCor.end());
 
-    cropRectangle.x = int(max(minX - (maxX - minX) / 10,1));
-    cropRectangle.y = int(max(minY - (maxY - minY) / 2,1));
-    cropRectangle.width = int(min((maxX - minX)*1.2,frame.size().width - cropRectangle.x-1));
-    cropRectangle.height = int(min((maxY - minY) * 1.6,frame.size().height-cropRectangle.y-1));
+    cropRectangle.x = int(max(minX - 10 ,1));
+    cropRectangle.y = int(max(minY - 10 ,1));
+    cropRectangle.width = int(min(maxX - minX + 20.0,frame.size().width - cropRectangle.x-1));
+    cropRectangle.height = int(min(maxY - minY + 20.0,frame.size().height-cropRectangle.y-1));
 
     cout<<cropRectangle.x<<" "<<cropRectangle.y<<" "<<cropRectangle.width<<" "<<cropRectangle.height<<endl;
 

@@ -41,6 +41,59 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     int training_num = images.size();
     int image_width = images[0].cols;
     int image_height = images[0].rows;
+
+    // get mean shape
+    for(int i = 0;i < current_shapes.size();i++){
+        // find max x coordinates and max y coordinates 
+        double max_x = -1e10;
+        double max_y = -1e10;
+        double min_x = 1e10;
+        double min_y = 1e10;
+        for(int j = 0;j < landmark_num;j++){
+            if(current_shapes[i](j,0) > max_x){
+                max_x = current_shapes[i](j,0);
+            } 
+            if(current_shapes[i](j,0) < min_x){
+                min_x = current_shapes[i](j,0);
+            } 
+            if(current_shapes[i](j,1) > max_y){
+                max_y = current_shapes[i](j,1);
+            } 
+            if(current_shapes[i](j,1) < min_y){
+                min_y = current_shapes[i](j,1);
+            } 
+        }
+        Bbox temp;
+        temp.start_x = min_x - 10;
+        temp.start_y = min_y - 10;
+        temp.width = max_x - min_x + 20;
+        temp.height = max_y - min_y + 20;
+        temp.centroid_x = min_x + temp.width/2.0; 
+        temp.centroid_y = min_y + temp.height/2.0
+        bounding_box.push_back(temp);
+    }
+
+    vector<Mat_<double> > normalized_shape;
+    mean_shape = Mat::zeros(landmark_num,2, double);
+    for(int i = 0;i < current_shapes.size();i++){
+        Mat_<double> temp_shape(landmark_num,2);
+        for(int j = 0;j < landmark_num;j++){
+            double temp1 = (current_shapes[i](j,0) - bounding_box[i].centroid_x) / (bounding_box[i].width / 2.0);
+            double temp2 = (current_shapes[i](j,1) - bounding_box[i].centroid_y) / (bounding_box[i].height / 2.0);
+            temp_shape(j,0) = temp1;
+            temp_shape(j,1) = temp2;
+            mean_shape(j,0) += temp1;
+            mean_shape(j,1) += temp2;
+        }
+        normalized_shape.push_back(temp_shape);
+    }
+    mean_shape = 1.0 / current_shapes.size() * mean_shape; 
+
+      
+    
+
+
+
     // generate local coordinates
     for(int i = 0;i < pixel_pair_num;i++){
         int x_coordinates = random_generator.uniform(-20,20);

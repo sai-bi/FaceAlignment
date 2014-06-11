@@ -18,6 +18,24 @@ using namespace std;
 using namespace cv;
 
 
+class Bbox{
+    public:
+        double start_x;
+        double start_y;
+        double width;
+        double height;
+        double centroid_x;
+        double centroid_y;
+        Bbox(){
+            start_x = 0;
+            start_y = 0;
+            width = 0;
+            height = 0;
+            centroid_x = 0;
+            centroid_y = 0;  
+        };
+};
+
 class Fern{
     private:
         int pixel_pair_num_in_fern_;
@@ -49,6 +67,7 @@ class FernCascade{
     private:
         vector<Fern> primary_fern_;
         int second_level_num_;
+        vector<Bbox> bounding_box;
     public:
         FernCascade();
         void train(const vector<Mat_<uchar> >& images,
@@ -72,6 +91,7 @@ class ShapeRegressor{
         vector<Mat_<double> > current_shapes_;
         vector<Mat_<double> > target_shapes_;
         vector<FernCascade> fern_cascades_;
+        vector<Bbox> bbox_;
         int first_level_num_;
         int second_level_num_;
         int pixel_pair_num_;
