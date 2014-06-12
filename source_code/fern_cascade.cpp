@@ -90,26 +90,54 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     mean_shape_ = 1.0 / current_shapes_.size() * mean_shape; 
 
     // get feature pixel location for each image
-    
-    
+    vector<vector<double> > pixel_density;
+    pixel_density.resize(pixel_pair_num);
+    for(int i = 0;i < normalized_shapes.size();i++){
+        // similarity transform from normalized_shapes to mean shape     
+        Mat_<double> rotation(2,2);
+        Mat_<double> translation(landmark_num,2);
+        double scale = 0;
+        translate_scale_rotate(normalized_shapes[i],mean_shape_,translation,scale,rotation); 
+       
 
-
-     
-
-
-     
-
-    // generate local coordinates
-    /*
-    for(int i = 0;i < pixel_pair_num;i++){
-        int x_coordinates = random_generator.uniform(-20,20);
-        int y_coordinates = random_generator.uniform(-20,20);
-        int index = random_generator.uniform(0,landmark_num);
-        pixel_coordinates(i,0) = x_coordinates;
-        pixel_coordinates(i,1) = y_coordinates; 
-        nearest_keypoint_index(i) = index;
+        for(int j = 0;j < pixel_pair_num;j++){
+            double x = pixel_coordinates(j,0);
+            double y = pixel_coordinates(j,1);
+            double project_x = rotation(0,0) * x + rotation(0,1) * y;
+            double project_y = rotation(1,0) * x + rotation(1,1) * y;
+            project_x = project_x * scale;
+            project_y = project_y * scale;
+            
+            // resize according to bounding_box
+            project_x = project_x * bounding_box[i].width/2.0;
+            project_y = project_y * bounding_box[i].height/2.0; 
+            
+            int index = nearest_keypoint_index(j); 
+            int real_x = project_x + current_shapes[i](index,0);
+            int real_y = project_y + current_shapes[i](index,1);
+           
+            if(real_x < 0){
+                real_x = 0
+            } 
+            if(real_y < 0){
+                real_y = 0;
+            }
+            if(real_x > images[i].cols-1){
+                real_x = images[i].cols-1;
+            }
+            if(real_y > images[i].rows - 1){
+                real_y = images[i].rows - 1;
+            }
+            pixel_density[j].push_back(int(images[i](real_y,real_x)));    
+        } 
     }
-    */
+
+     
+
+
+     
+
+
 
 	// calculate the inverse of normalize matrix
     vector<Mat_<double> > inverse_normalize_matrix;
