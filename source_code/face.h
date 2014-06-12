@@ -56,7 +56,7 @@ class Fern{
                 vector<Mat_<double> >& current_shapes,
                 int pixel_pair_num_in_fern,
                 vector<Mat_<double> >& normalized_targets,
-                const vector<Mat_<double> >& invert_normalized_matrix);
+                vector<Mat_<double> >& prediction);
         void predict(const Mat_<uchar>& image, Mat_<double>& shape,
                 const Mat_<double>& invert_normalized_matrix);
         void write(ofstream& fout);
@@ -78,14 +78,12 @@ class FernCascade{
                 int pixel_pair_num,
                 vector<Mat_<double> >& normalized_targets,
                 int pixel_pair_in_fern);
-        void predict(const Mat_<uchar>& image, Mat_<double>& shape,
-                const Mat_<double>& mean_shape);
+        void predict(const Mat_<uchar>& image, Mat_<double>& shape);
         void write(ofstream& fout);
         void read(ifstream& fin);        
 };
 class ShapeRegressor{
     private:
-        Mat_<double> mean_shape_;
         vector<Mat_<uchar> > images_;
         vector<Mat_<double> > current_shapes_;
         vector<Mat_<double> > target_shapes_;
@@ -115,8 +113,7 @@ class ShapeRegressor{
         void load(const char* file_name);
         void save(const char* file_name);
         void train();
-        void predict(const Mat_<uchar>& image, Mat_<double>& shape,
-                const Mat_<double>& mean_shape);
+        void predict(const Mat_<uchar>& image, Mat_<double>& shape);
         void calcSimil(const Mat_<double> &src,const Mat_<double> &dst,
                 double &a,double &b,double &tx,double &ty);
         void invSimil(double a1,double b1,double tx1,double ty1,

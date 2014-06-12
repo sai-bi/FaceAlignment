@@ -35,7 +35,7 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
 	Mat_<int> nearest_keypoint_index(pixel_pair_num,1);
     RNG random_generator(getTickCount());
     // primary_fern_.resize(second_level_num);
-    int landmark_num = mean_shape.rows;   
+    int landmark_num = current_shapes.rows;
     int training_num = images.size();
     int image_width = images[0].cols;
     int image_height = images[0].rows;
@@ -188,15 +188,33 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     }
 	// train ferns
     primary_fern_.resize(second_level_num);
+    vector<Mat_<double> > prediction;
+
+    prediction.resize(current_shapes.size());
+    for(int i = 0;i < current_shapes.size();i++){
+        prediction[i] = Mat::zeros(landmark_num,2,CV_64FC1);
+    }
+    
     for(int i = 0;i < second_level_num;i++){
 		cout<<"Training fern "<<i<<endl;
-        primary_fern_[i].train(pixel_density,correlation,pixel_coordinates,nearest_keypoint_index, current_shapes,pixel_pair_in_fern, normalized_targets,inverse_normalize_matrix); 
+        primary_fern_[i].train(pixel_density,correlation,pixel_coordinates,nearest_keypoint_index, current_shapes,pixel_pair_in_fern,normalized_targets,
+                prediction); 
     }
+    
+    current_shapes = compose_shape(prediction, current_shapes, bounding_box); 
+    current_shapes = reproject_shape(current_shapes,bounding_box); 
 }
 
 
 void FernCascade::write(ofstream& fout){
     fout<<second_level_num_<<endl;
+    fout<<mean_shape_.rows<<endl; 
+    // write mean shape 
+    for(int i = 0;i < mean_shape_.rows;i++){
+        fout<<mean_shape_(i,0)<<" "<<mean_shape_(j,1)<<" "; 
+    } 
+    fout<<endl;
+
     for(int i = 0;i < second_level_num_;i++){
         primary_fern_[i].write(fout);
     }
@@ -205,20 +223,32 @@ void FernCascade::read(ifstream& fin){
     fin>>second_level_num_;
 	second_level_num_ = 500;
 	primary_fern_.resize(second_level_num_);
+    
+    int landmark_num = 0;
+    fin>>landmark_num;
+
+    // read mean shape
+    for(int i = 0;i < landmark_num;i++){
+        fin>>mean_shape_(i,0)>>mean_shape_(i,1);
+    }
+
+
     for(int i = 0;i < second_level_num_;i++){
         primary_fern_[i].read(fin);
     }
 
 	return;
 }
-void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape,const Mat_<double>& mean_shape){
-    Mat_<double> normalize_matrix = Mat_<double>::eye(2,2);
-    Mat_<double> invert_normalized_matrix = Mat_<double>::eye(2,2);
+void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box){
+    // Mat_<double> normalize_matrix = Mat_<double>::eye(2,2);
+    // Mat_<double> invert_normalized_matrix = Mat_<double>::eye(2,2);
     // solve(shape,mean_shape,normalize_matrix,DECOMP_SVD);
     // invert(normalize_matrix,invert_normalized_matrix,DECOMP_SVD);
+    Mat_<double> normalized_shapes;
+
 
     for(int i = 0;i < second_level_num_;i++){
-        primary_fern_[i].predict(image,shape,invert_normalized_matrix);
+        primary_fern_[i].predict(image,shape, bounding_box);
     }
 }
 

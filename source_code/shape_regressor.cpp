@@ -52,14 +52,7 @@ void ShapeRegressor::train(){
     for(int i = 0;i < first_level_num_;i++){
 
         vector<Mat_<double> > normalize_matrix;
-        // calculate normalized matrix
-        // calcuate_normalized_matrix(normalize_matrix);
-        // normalize targets = (target - current) * normalize_matrix;
-        // vector<Mat_<double> > normalized_targets(training_num_);
-        // for(int j = 0;j < training_num_;j++){
-            // normalized_targets[j] = (target_shapes_[j] - current_shapes_[j]) * 
-                // normalize_matrix[j];
-        // }
+       
         vector<Mat_<double> > temp1;
         temp1 = inverse_shape(current_shapes_,bounding_box);
         temp1 = compose_shape(temp1,target_shapes,bounding_box); 
@@ -116,9 +109,9 @@ void ShapeRegressor::write(ofstream& fout){
  * @param image input face image in grayscale
  * @param shape initial shape
  */
-void ShapeRegressor::predict(const Mat_<uchar>& image, Mat_<double>& shape, const Mat_<double>& mean_shape){
+void ShapeRegressor::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box){
     for(int i = 0;i < first_level_num_;i++){
-        fern_cascades_[i].predict(image,shape,mean_shape);
+        fern_cascades_[i].predict(image,shape,bounding_box);
     }
 }
 

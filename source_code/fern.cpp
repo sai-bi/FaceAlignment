@@ -26,7 +26,7 @@ void Fern::train(const vector<vector<double> >& pixel_density,
         vector<Mat_<double> >& current_shapes,
         int pixel_pair_num_in_fern,
         vector<Mat_<double> >& normalized_targets,
-        const vector<Mat_<double> >& invert_normalized_matrix){
+        vector<Mat_<double> >& prediction){
     pixel_pair_num_in_fern_ = pixel_pair_num_in_fern;
     nearest_keypoint_index_ = nearest_keypoint_index.clone();
     pixel_coordinates_ = pixel_coordinates.clone();
@@ -35,6 +35,7 @@ void Fern::train(const vector<vector<double> >& pixel_density,
     landmark_num_ = landmark_num;
     RNG random_generator(getTickCount());
     pixel_pair_selected_index_.create(pixel_pair_num_in_fern,2);
+
     for(int i = 0;i < pixel_pair_num_in_fern_;i++){
 		// get a random direction
         Mat_<double> random_direction(landmark_num * 2,1);
@@ -84,7 +85,6 @@ void Fern::train(const vector<vector<double> >& pixel_density,
 
                 double temp1 = covariance(j,j) + covariance(k,k) - 2 * covariance(j,k);
                 if(temp1 == 0){
-                    // cout<<"covariance is 0"<<endl;
                     continue;
                 }
 
@@ -96,7 +96,6 @@ void Fern::train(const vector<vector<double> >& pixel_density,
                     max_pixel_pair_index_1 = j;
                     max_pixel_pair_index_2 = k; 
                 }
-
             }
         } 
         // assert(max_pixel_pair_index_1 != max_pixel_pair_index_2);
@@ -168,8 +167,7 @@ void Fern::train(const vector<vector<double> >& pixel_density,
         bin_output_[i] = (1.0/((1.0+1000.0/bin_size) * bin_size)) * temp;
         for(int j = 0;j < bin_size;j++){
             int index = bin_of_shape[i][j];
-            current_shapes[index] = current_shapes[index] + bin_output_[i]
-                * invert_normalized_matrix[index];
+            prediction[index] += bin_output_[i];
             normalized_targets[index] = normalized_targets[index] - bin_output_[i];
         } 
     }
@@ -231,8 +229,7 @@ void Fern::write(ofstream& fout){
 }
 
 
-void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape,
-        const Mat_<double>& invert_normalized_matrix){  
+void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box){  
     int bin_index = 0;
     for(int i = 0;i < pixel_pair_num_in_fern_;i++){
         int keypoint_index1 = nearest_keypoint_index_(i,0);
