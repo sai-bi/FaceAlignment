@@ -21,9 +21,7 @@ FernCascade::FernCascade(){
  * @param normalized_targets (target - current) * normalize_matrix
  */
 void FernCascade::train(const vector<Mat_<uchar> >& images,
-        const vector<Mat_<double> >& normalize_matrix,
         const vector<Mat_<double> >& target_shapes,
-        const Mat_<double>& mean_shape,
         int second_level_num,
         vector<Mat_<double> >& current_shapes,
         int pixel_pair_num,
@@ -42,7 +40,9 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     int image_width = images[0].cols;
     int image_height = images[0].rows;
 
-    // get mean shape
+
+    vector<Bbox> bounding_box;
+
     for(int i = 0;i < current_shapes.size();i++){
         // find max x coordinates and max y coordinates 
         double max_x = -1e10;
@@ -73,28 +73,34 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         bounding_box.push_back(temp);
     }
 
-    vector<Mat_<double> > normalized_shape;
-    mean_shape = Mat::zeros(landmark_num,2, double);
-    for(int i = 0;i < current_shapes.size();i++){
+    vector<Mat_<double> > normalized_shapes;
+    mean_shape_ = Mat::zeros(landmark_num_,2,CV_64FC1);
+    for(int i = 0;i < current_shapes_.size();i++){
         Mat_<double> temp_shape(landmark_num,2);
         for(int j = 0;j < landmark_num;j++){
             double temp1 = (current_shapes[i](j,0) - bounding_box[i].centroid_x) / (bounding_box[i].width / 2.0);
             double temp2 = (current_shapes[i](j,1) - bounding_box[i].centroid_y) / (bounding_box[i].height / 2.0);
             temp_shape(j,0) = temp1;
             temp_shape(j,1) = temp2;
-            mean_shape(j,0) += temp1;
-            mean_shape(j,1) += temp2;
+            mean_shape_(j,0) += temp1;
+            mean_shape_(j,1) += temp2;
         }
-        normalized_shape.push_back(temp_shape);
+        normalized_shapes.push_back(temp_shape);
     }
-    mean_shape = 1.0 / current_shapes.size() * mean_shape; 
+    mean_shape_ = 1.0 / current_shapes_.size() * mean_shape; 
 
-      
+    // get feature pixel location for each image
+    
     
 
 
+     
+
+
+     
 
     // generate local coordinates
+    /*
     for(int i = 0;i < pixel_pair_num;i++){
         int x_coordinates = random_generator.uniform(-20,20);
         int y_coordinates = random_generator.uniform(-20,20);
@@ -103,6 +109,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         pixel_coordinates(i,1) = y_coordinates; 
         nearest_keypoint_index(i) = index;
     }
+    */
+
 	// calculate the inverse of normalize matrix
     vector<Mat_<double> > inverse_normalize_matrix;
     for(int i = 0;i < normalize_matrix.size();i++){

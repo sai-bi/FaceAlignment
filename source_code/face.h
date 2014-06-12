@@ -68,12 +68,11 @@ class FernCascade{
         vector<Fern> primary_fern_;
         int second_level_num_;
         vector<Bbox> bounding_box;
+        vector<Mat_<double> > mean_shape_;
     public:
         FernCascade();
         void train(const vector<Mat_<uchar> >& images,
-                const vector<Mat_<double> >& normalize_matrix,
                 const vector<Mat_<double> >& target_shapes,
-                const Mat_<double>& mean_shape,
                 int second_level_num,
                 vector<Mat_<double> >& current_shapes,
                 int pixel_pair_num,

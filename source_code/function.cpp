@@ -95,3 +95,62 @@ void show_image(const Mat_<uchar>& input_image, const Mat_<double>&  points){
     imshow("image",image);
     // waitKey(2);
 }
+
+
+vector<Mat_<double> > inverse_shape(const vector<Mat_<double> >& shapes, const vector<Bbox>& bounding_box){
+    vector<Mat_<double> > result;   
+
+    result = project_shape(shapes, bounding_box); 
+    
+    for(int i = 0;i < result.size();i++){
+        result[i] = -1 * result[i];
+    }
+
+    return result;
+}
+
+vector<Mat_<double> > compose_shape(const vector<Mat_<double> >& shape1, const vector<Mat_<double> >& shape2, 
+        const vector<Bbox>& bounding_box){
+   
+    assert(shape1.size() == shape2.size());
+    vector<Mat_<double> > result;
+    result = project_shape(shape2,bounding_box);
+    
+    for(int i = 0;i < shape1.size();i++){
+        result[i] = result[i] + shape1[i]; 
+    } 
+    return result;
+}
+
+
+vector<Mat_<double> > project_shape(const vector<Mat_<double> >& shapes, const vector<Bbox>& bounding_box){
+    vector<Mat_<double> > result;   
+
+    for(int i = 0;i < shapes.size();i++){
+        Mat_<double> temp(shapes[i].rows,2);
+        for(int j = 0;j < shapes[i].rows;j++){
+            temp(j,0) = (shapes[i](j,0)-bounding_box[i].centroid_x) / (bounding_box[i].width / 2.0);
+            temp(j,1) = (shapes[i](j,1)-bounding_box[i].centroid_y) / (bounding_box[i].height / 2.0);  
+        } 
+        result.push_back(temp);
+    }
+    return result; 
+}
+
+vector<Mat_<double> > reproject_shape(const vector<Mat_<double> >& shapes, const vector<Bbox>& bounding_box){
+    vector<Mat_<double> > result;   
+
+    for(int i = 0;i < shapes.size();i++){
+        Mat_<double> temp(shapes[i].rows,2);
+        for(int j = 0;j < shapes[i].rows;j++){
+            // temp(j,0) = (shape[i](j,0)-bounding_box[i].centroid_x) / (bounding_box[i].width / 2.0);
+            // temp(j,1) = (shape[i](j,1)-bounding_box[i].centroid_y) / (bounding_box[i].height / 2.0);  
+            temp(j,0) = (shapes[i](j,0) * bounding_box[i].width / 2.0 + bounding_box[i].centroid_x);
+            temp(j,1) = (shapes[i](j,1) * bounding_box[i].height / 2.0 + bounding_box[i].centroid_y);
+        } 
+        result.push_back(temp);
+    }
+    return result; 
+}
+
+
