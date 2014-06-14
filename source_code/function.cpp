@@ -42,7 +42,7 @@ void train(const vector<Mat_<uchar> >& input_images,
 }
 
 Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vector<Mat_<double> > target_shapes,
-        const Mat_<double>& mean_shape,
+        Bbox& bounding_box,
         int initial_number){
     RNG random_generator(getTickCount()); 
     Mat_<double> combine_shape;
@@ -52,15 +52,19 @@ Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vec
             index = random_generator.uniform(0,target_shapes.size());  
         }while(index == i);
         Mat_<double> shape = target_shapes[index].clone();
-        // Mat_<double> shape = mean_shape.clone();    
-        regressor.predict(image,shape,mean_shape);
+        // Mat_<double> shape = mean_shape.clone();
+        Bbox bounding_box_1 = get_bounding_box(shape);
+        shape = shape_normalize(shape,bounding_box_1);
+        shape = reproject_shape_single(shape,bounding_box); 
+
+        regressor.predict(image,shape,bounding_box);
         if(i == 0){
             combine_shape = shape.clone();
         }else{
             combine_shape = combine_shape + shape;
         }
     }
-    return combine_shape; 
+    return (1.0/initial_number * combine_shape); 
 }
 
 // calculate the covariance of two vectors
@@ -143,8 +147,6 @@ vector<Mat_<double> > reproject_shape(const vector<Mat_<double> >& shapes, const
     for(int i = 0;i < shapes.size();i++){
         Mat_<double> temp(shapes[i].rows,2);
         for(int j = 0;j < shapes[i].rows;j++){
-            // temp(j,0) = (shape[i](j,0)-bounding_box[i].centroid_x) / (bounding_box[i].width / 2.0);
-            // temp(j,1) = (shape[i](j,1)-bounding_box[i].centroid_y) / (bounding_box[i].height / 2.0);  
             temp(j,0) = (shapes[i](j,0) * bounding_box[i].width / 2.0 + bounding_box[i].centroid_x);
             temp(j,1) = (shapes[i](j,1) * bounding_box[i].height / 2.0 + bounding_box[i].centroid_y);
         } 
@@ -152,6 +154,60 @@ vector<Mat_<double> > reproject_shape(const vector<Mat_<double> >& shapes, const
     }
     return result; 
 }
+
+Mat_<double> reproject_shape_single(const Mat_<double>& shape, const Bbox& bounding_box){
+    Mat_<double> result(shape.rows,2);   
+    for(int j = 0;j < shapes.rows;j++){
+        result(j,0) = (shape(j,0) * bounding_box.width / 2.0 + bounding_box.centroid_x);
+        result(j,1) = (shape(j,1) * bounding_box.height / 2.0 + bounding_box.centroid_y);
+    } 
+    return result;  
+}
+
+Mat_<double> shape_normalize(const Mat_<double>& shape, const Bbox& bounding_box){    
+    // Bbox bounding_box = get_bounding_box(shape);
+    
+    Mat_<double> result(shape.rows,2);
+    for(int i = 0;i < shape.rows;i++){
+        result(i,0) = (shape(i,0) - bounding_box.centroid_x) / (bounding_box.width / 2.0);
+        result(i,1) = (shape(i,1) - bounding_box.centroid_y) / (bounding_box.height / 2.0);  
+    }
+    return result; 
+} 
+
+Bbox get_bounding_box(const Mat_<double>& shape){
+    double min_x = shape(i,0);
+    double min_y = shape(i,1);
+    double max_x = shape(i,0);
+    double max_y = shape(i,1);
+    for(int i = 0;i < shape.rows;i++){
+        if(shape(i,0) < min_x){
+            min_x = shape(i,0);
+        } 
+        if(shape(i,0) > max_x){
+            max_x = shape(i,0);
+        }
+        if(shape(i,1) < min_y){
+            min_y = shape(i,1);
+        }
+        if(shape(i,1) > max_y){
+            max_y = shape(i,1);
+        }
+    }
+
+    Bbox result;
+    result.start_x = max(0,min_x-10);
+    result.start_y = max(0,min_y-10);
+    double end_x = max_x;
+    double end_y = max_y;
+    result.width = end_x - start_x;
+    result.height = end_y - start_y;
+    result.centroid_x = result.start_x + result.width / 2.0; 
+    result.centroid_y = result.start_y + result.height / 2.0;
+    return result;
+}
+
+
 
 
 void translate_scale_rotate(const Mat_<double>& shape1, const Mat_<double>& shape2, 

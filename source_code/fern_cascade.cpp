@@ -99,7 +99,6 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         double scale = 0;
         translate_scale_rotate(normalized_shapes[i],mean_shape_,translation,scale,rotation); 
        
-
         for(int j = 0;j < pixel_pair_num;j++){
             double x = pixel_coordinates(j,0);
             double y = pixel_coordinates(j,1);
@@ -129,7 +128,10 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
                 real_y = images[i].rows - 1;
             }
             pixel_density[j].push_back(int(images[i](real_y,real_x)));    
-        } 
+        }
+
+    
+
     }
 
      
@@ -138,7 +140,7 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
      
 
 
-
+    /*
 	// calculate the inverse of normalize matrix
     vector<Mat_<double> > inverse_normalize_matrix;
     for(int i = 0;i < normalize_matrix.size();i++){
@@ -177,6 +179,7 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         }
 		pixel_density.push_back(curr_pair_pixel_density);
     }
+    */
 	// calculate the correlation between pixels 
     Mat_<double> correlation(pixel_pair_num,pixel_pair_num);
     for(int i = 0;i < pixel_pair_num;i++){
@@ -244,11 +247,14 @@ void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& b
     // Mat_<double> invert_normalized_matrix = Mat_<double>::eye(2,2);
     // solve(shape,mean_shape,normalize_matrix,DECOMP_SVD);
     // invert(normalize_matrix,invert_normalized_matrix,DECOMP_SVD);
-    Mat_<double> normalized_shapes;
-
+    Mat_<double> normalize_shape = shape_normalize(shape, bounding_box); 
+    Mat_<double> rotation;
+    double scale;
+    Mat_<double> translation;
+    translate_scale_rotate(shape,mean_shape_,translation,scale,rotation); 
 
     for(int i = 0;i < second_level_num_;i++){
-        primary_fern_[i].predict(image,shape, bounding_box);
+        primary_fern_[i].predict(image,shape, bounding_box,mean_shape_,scale, rotation);
     }
 }
 

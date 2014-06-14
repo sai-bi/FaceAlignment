@@ -229,7 +229,8 @@ void Fern::write(ofstream& fout){
 }
 
 
-void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box){  
+void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box,const Mat_<double>& mean_shape,
+        double scale, const Mat_<double>& rotation){  
     int bin_index = 0;
     for(int i = 0;i < pixel_pair_num_in_fern_;i++){
         int keypoint_index1 = nearest_keypoint_index_(i,0);
@@ -239,47 +240,36 @@ void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding
         Mat_<double> pixel_2;
         coordinates(0,0) = selected_x_(i,0);
         coordinates(0,1) = selected_y_(i,0);
-        pixel_1 = coordinates * invert_normalized_matrix;
-        pixel_1(0,0) += shape(keypoint_index1,0);
-        pixel_1(0,1) += shape(keypoint_index1,1);
+        
+        double x = selected_x_(i,0);
+        double y = selected_y_(i,0);
+        
+        double project_x = scale * (rotation(0,0)*x + rotation(0,1)*y);
+        double project_y = scale * (rotation(1,0)*x + rotation(1,1)*y);
+        
+        project_x = project_x * bounding_box.width/2.0 + shape(keypoint_index1,0);
+        project_y = project_y * bounding_box.height/2.0 + shape(keypoint_index1,1);
+        
+        project_x = max(project_x,0);
+        project_y = max(project_y,0);
+        project_x = min(project_x,image.cols-1);
+        project_y = min(project_y,image.rows-1);
 
-        coordinates(0,0) = selected_x_(i,1);
-        coordinates(0,1) = selected_y_(i,1); 
-        pixel_2 = coordinates * invert_normalized_matrix;
-        pixel_2(0,0) += shape(keypoint_index1,0);
-        pixel_2(0,1) += shape(keypoint_index2,1);
+        double intensity_1 = (int)(image(project_y,project_x));
 
-		int x = pixel_1(0,0);
-		int y = pixel_1(0,1);
-		if(x < 0){
-			x = 0;
-		}
-		if(y < 0){
-			y = 0;
-		}
-		if(x >= image.cols){
-			x = image.cols-1;
-		}
-		if(y >= image.rows){
-			y = image.rows-1;
-		}
-        double intensity_1 = image(y,x);
-		x = pixel_2(0,0);
-		y = pixel_2(0,1);
-		if(x < 0){
-			x = 0;
-		}
-		if(y < 0){
-			y = 0;
-		}
-		if(x >= image.cols){
-			x = image.cols-1;
-		}
-		if(y >= image.rows){
-			y = image.rows-1;
-		}
-		
-		double intensity_2 = image(y,x); 
+        x = selected_x_(i,1);
+        y = selected_y_(i,1);
+        project_x = scale * (rotation(0,0)*x + rotation(0,1)*y);
+        project_y = scale * (rotation(1,0)*x + rotation(1,1)*y);
+        project_x = project_x * bounding_box.width/2.0 + shape(keypoint_index2,0);
+        project_y = project_y * bounding_box.height/2.0 + shape(keypoint_index2,1);
+        project_x = max(project_x,0);
+        project_y = max(project_y,0);
+        project_x = min(project_x,image.cols-1);
+        project_y = min(project_y,image.rows-1);
+
+        double intensity_2 = (int)(image(project_y,project_x));
+
         if(intensity_1 - intensity_2 >= threshold_(i)){
             bin_index = bin_index + (int)(pow(2.0,i));
         }
