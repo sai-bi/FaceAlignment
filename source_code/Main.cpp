@@ -30,23 +30,6 @@ int main(){
     
 
 
-    /*
-    for(int i = 0;i < img_num;i++){
-        string image_name = "./../data/LFPW/lfpwFaces/";
-        image_name = image_name + to_string(i+1) + ".jpg";
-        Mat_<uchar> temp = imread(image_name,0);
-        images.push_back(temp);
-        average_height = average_height + temp.rows;
-        average_width = average_width + temp.cols;
-    }
-
-    average_height = average_height / img_num;
-    average_width  =average_width / img_num;
-
-	for(int i = 0;i < img_num;i++){
-		resize(images[i],images[i],Size(average_width,average_height));
-	}
-    */
 
     ifstream fin;
     fin.open("./../data/LFPW/keypointsInfor.txt"); 

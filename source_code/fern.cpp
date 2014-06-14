@@ -274,7 +274,10 @@ void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding
             bin_index = bin_index + (int)(pow(2.0,i));
         }
     } 
-    shape = shape + bin_output_[bin_index] * invert_normalized_matrix;
+     
+    shape = shape + bin_output_[bin_index];
+    shape = compose_shape(bin_output_[bin_index],shape, bounding_box);
+    shape = reproject_shape(shape,bounding_box);
     // show_image(image,shape);
 }
 

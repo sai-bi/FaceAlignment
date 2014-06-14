@@ -140,47 +140,7 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
      
 
 
-    /*
-	// calculate the inverse of normalize matrix
-    vector<Mat_<double> > inverse_normalize_matrix;
-    for(int i = 0;i < normalize_matrix.size();i++){
-        Mat_<double> temp = Mat_<double>::eye(2,2);
-        // invert(normalize_matrix[i],temp,DECOMP_SVD);
-        inverse_normalize_matrix.push_back(temp);
-    }
-
-    vector<vector<double> > pixel_density;
-    for(int i = 0;i < pixel_pair_num;i++){
-        int index = nearest_keypoint_index(i);
-        Mat_<double> landmark_coordinates(1,2);
-        landmark_coordinates(0,0) = pixel_coordinates(i,0);
-        landmark_coordinates(0,1) = pixel_coordinates(i,1);
-        vector<double> curr_pair_pixel_density;
-        for(int j = 0;j < training_num;j++){
-			// project the coordinates back into original system
-            Mat_<double> global_coordinates = landmark_coordinates * inverse_normalize_matrix[j];
-            global_coordinates(0,0) += current_shapes[j](index,0);
-            global_coordinates(0,1) += current_shapes[j](index,1);
-            int temp_x = global_coordinates(0,0);
-            int temp_y = global_coordinates(0,1);   
-            if(temp_x < 0){
-				temp_x = 0;
-			}
-			if(temp_y < 0){
-				temp_y = 0;
-			}
-			if(temp_x >= image_width){
-				temp_x = image_width - 1;
-			}
-			if(temp_y >= image_height){
-				temp_y = image_height - 1;
-			}
-			curr_pair_pixel_density.push_back(int(images[j](temp_y,temp_x)));
-        }
-		pixel_density.push_back(curr_pair_pixel_density);
-    }
-    */
-	// calculate the correlation between pixels 
+   	// calculate the correlation between pixels 
     Mat_<double> correlation(pixel_pair_num,pixel_pair_num);
     for(int i = 0;i < pixel_pair_num;i++){
         for(int j = i;j< pixel_pair_num;j++){
