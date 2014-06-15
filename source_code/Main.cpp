@@ -58,8 +58,8 @@ int main(){
         double keypoint_y;
         for(int i = 0;i < 35;i++){
             fin>>keypoint_x>>keypoint_y;
-            temp(i,0) = keypoint_x;
-            temp(i,1) = keypoint_y;
+            temp(i,0) = keypoint_x + start_x;
+            temp(i,1) = keypoint_y + start_y;
         }
         target_shapes.push_back(temp);
     }  

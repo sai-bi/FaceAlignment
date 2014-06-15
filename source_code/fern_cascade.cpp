@@ -182,13 +182,14 @@ void FernCascade::write(ofstream& fout){
 }
 void FernCascade::read(ifstream& fin){
     fin>>second_level_num_;
-	second_level_num_ = 500;
+	// second_level_num_ = 500;
 	primary_fern_.resize(second_level_num_);
     
     int landmark_num = 0;
     fin>>landmark_num;
 
     // read mean shape
+    mean_shape_.create(landmark_num,2);
     for(int i = 0;i < landmark_num;i++){
         fin>>mean_shape_(i,0)>>mean_shape_(i,1);
     }
@@ -213,6 +214,14 @@ void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& b
 
     for(int i = 0;i < second_level_num_;i++){
         primary_fern_[i].predict(image,shape, bounding_box,mean_shape_,scale, rotation);
+
     }
+    Mat_<uchar> test_image_1 = image.clone();
+    for(int i = 0;i < shape.rows;i++){
+        circle(test_image_1,Point2d(shape(i,0),shape(i,1)),3,Scalar(255,0,0),-1,8,0);
+    }
+    imshow("result",test_image_1);
+    waitKey(0);
 }
+
 
