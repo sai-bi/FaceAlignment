@@ -67,7 +67,6 @@ class FernCascade{
     private:
         vector<Fern> primary_fern_;
         int second_level_num_;
-        vector<Bbox> bounding_box;
     public:
         FernCascade();
         void train(const vector<Mat_<uchar> >& images,
@@ -78,7 +77,7 @@ class FernCascade{
                 vector<Mat_<double> >& normalized_targets,
                 int pixel_pair_in_fern,
                 const Mat_<double>& mean_shape);
-        void predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box);
+        void predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box,const Mat_<double>& mean_shape);
         void write(ofstream& fout);
         void read(ifstream& fin);        
 };

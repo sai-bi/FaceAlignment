@@ -80,6 +80,11 @@ Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vec
             index = 11; 
         }while(index == i);
         Mat_<double> shape = target_shapes[index].clone();
+
+        Bbox temp = get_bounding_box(shape);
+        shape = project_shape(shape,temp);
+        shape = reproject_shape(shape,bounding_box); 
+
         // Mat_<double> shape = mean_shape.clone();
         // Bbox bounding_box_1 = get_bounding_box(shape);
         // shape = shape_normalize(shape,bounding_box_1);

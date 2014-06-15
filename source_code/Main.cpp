@@ -37,12 +37,8 @@ int main(){
     double start_y;
     double curr_width;
     double curr_height;
-    // Mat_<double> mean_shape(landmark_num,2);
     vector<Mat_<double> > target_shapes;
-    for(int i = 0;i < landmark_num;i++){
-        mean_shape(i,0) = 0;
-        mean_shape(i,1) = 0;
-    }
+
     while(fin>>start_x>>start_y>>curr_width>>curr_height){
         Bbox temp_bbox;
         temp_bbox.start_x = start_x;

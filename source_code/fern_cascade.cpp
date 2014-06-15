@@ -40,37 +40,21 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     int image_width = images[0].cols;
     int image_height = images[0].rows;
 
-
     vector<Bbox> target_bounding_box;
     vector<Mat_<double> > normalized_curr_shape; 
     // get bounding box of target shapes
    
     target_bounding_box = get_bounding_box(target_shapes);
-
+    
+    vector<Mat_<double> > normalized_shapes;
+    normalized_shapes = project_shape(current_shapes,target_bounding_box);
     // calculate normalized targets
-    normalized_targets = inverse_shape(current_shapes,bounding_box);
-    normalized_targets = compose_shape(normalized_targets,target_shapes,bounding_box); 
+    normalized_targets = inverse_shape(current_shapes,target_bounding_box);
+    normalized_targets = compose_shape(normalized_targets,target_shapes,target_bounding_box); 
     
     
     // calculate current mean shape 
-    vector<Mat_<double> > normalized_shapes;
-    /*
-    mean_shape_ = Mat::zeros(landmark_num,2,CV_64FC1);
-    mean_shape_.create(landmark_num,2);
-    for(int i = 0;i < current_shapes.size();i++){
-        Mat_<double> temp_shape(landmark_num,2);
-        for(int j = 0;j < landmark_num;j++){
-            double temp1 = (current_shapes[i](j,0) - bounding_box[i].centroid_x) / (bounding_box[i].width / 2.0);
-            double temp2 = (current_shapes[i](j,1) - bounding_box[i].centroid_y) / (bounding_box[i].height / 2.0);
-            temp_shape(j,0) = temp1;
-            temp_shape(j,1) = temp2;
-            mean_shape_(j,0) += temp1;
-            mean_shape_(j,1) += temp2;
-        }
-        normalized_shapes.push_back(temp_shape);
-    }
-    mean_shape_ = 1.0 / current_shapes.size() * mean_shape_; 
-    */
+
 
     // generate feature pixel location 
     for(int i = 0;i < pixel_pair_num;i++){
@@ -113,8 +97,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
             project_y = project_y * scale;
             
             // resize according to bounding_box
-            project_x = project_x * bounding_box[i].width/2.0;
-            project_y = project_y * bounding_box[i].height/2.0; 
+            project_x = project_x * target_bounding_box[i].width/2.0;
+            project_y = project_y * target_bounding_box[i].height/2.0; 
             
             int index = nearest_keypoint_index(j); 
             int real_x = project_x + current_shapes[i](index,0);
@@ -162,8 +146,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
                 prediction); 
     }
     
-    current_shapes = compose_shape(prediction, current_shapes, bounding_box); 
-    current_shapes = reproject_shape(current_shapes,bounding_box);
+    current_shapes = compose_shape(prediction, current_shapes, target_bounding_box); 
+    current_shapes = reproject_shape(current_shapes, target_bounding_box);
    
     // Mat_<uchar> test_image_1 = images[10].clone();
     // for(int i = 0;i < landmark_num;i++){
@@ -185,24 +169,25 @@ void FernCascade::write(ofstream& fout){
 void FernCascade::read(ifstream& fin){
     fin>>second_level_num_;
 
+    primary_fern_.resize(second_level_num_);
     for(int i = 0;i < second_level_num_;i++){
         primary_fern_[i].read(fin);
     }
 
 	return;
 }
-void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box){
+void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box, const Mat_<double>& mean_shape){
 
     Mat_<double> normalize_shape = shape_normalize(shape, bounding_box); 
     Mat_<double> rotation;
     double scale;
     Mat_<double> translation;
-    translate_scale_rotate(shape,mean_shape_,translation,scale,rotation); 
+    translate_scale_rotate(shape,mean_shape,translation,scale,rotation); 
 
     Mat_<double> prediction;
-    prediction = Mat::zeros(shape.rows,2);
+    prediction = Mat::zeros(shape.rows,2,CV_64FC1);
     for(int i = 0;i < second_level_num_;i++){
-        primary_fern_[i].predict(image, shape, bounding_box,mean_shape_,scale, rotation,prediction);
+        primary_fern_[i].predict(image, shape, bounding_box,mean_shape,scale, rotation,prediction);
         // shape = compose_shape(prediction, shape, bounding_box); 
         // shape = reproject_shape(shape, bounding_box);
     }

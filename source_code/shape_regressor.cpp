@@ -120,7 +120,7 @@ void ShapeRegressor::write(ofstream& fout){
  */
 void ShapeRegressor::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box){
     for(int i = 0;i < first_level_num_;i++){
-        fern_cascades_[i].predict(image,shape,bounding_box);
+        fern_cascades_[i].predict(image,shape,bounding_box,mean_shape_);
     }
 }
 
