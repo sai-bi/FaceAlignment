@@ -68,7 +68,6 @@ class FernCascade{
         vector<Fern> primary_fern_;
         int second_level_num_;
         vector<Bbox> bounding_box;
-        Mat_<double> mean_shape_;
     public:
         FernCascade();
         void train(const vector<Mat_<uchar> >& images,
@@ -77,7 +76,8 @@ class FernCascade{
                 vector<Mat_<double> >& current_shapes,
                 int pixel_pair_num,
                 vector<Mat_<double> >& normalized_targets,
-                int pixel_pair_in_fern);
+                int pixel_pair_in_fern,
+                const Mat_<double>& mean_shape);
         void predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box);
         void write(ofstream& fout);
         void read(ifstream& fin);        
@@ -130,7 +130,6 @@ double calculate_covariance(const vector<double>& v_1, const
 
 void train(const vector<Mat_<uchar> >& input_images,                  
         const vector<Mat_<double> >& target_shapes,
-        const Mat_<double>& mean_shape,
         int initial_number,
         int pixel_pair_num,
         int pixel_pair_in_fern,
@@ -169,6 +168,8 @@ Mat_<double>  compose_shape(const Mat_<double>& shape1, const Mat_<double>& shap
 Mat_<double> reproject_shape(const Mat_<double>& shapes, const Bbox& bounding_box);
 
 vector<Bbox> get_bounding_box(const vector<Mat_<double> >& shapes);
+
+Mat_<double> get_mean_shape(const vector<Mat_<double> >& shapes);
 #endif
 
 

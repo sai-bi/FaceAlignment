@@ -17,7 +17,6 @@
  */
 void train(const vector<Mat_<uchar> >& input_images,                  
         const vector<Mat_<double> >& target_shapes,
-        const Mat_<double>& mean_shape,
         int initial_number,
         int pixel_pair_num,
         int pixel_pair_in_fern,
@@ -57,7 +56,8 @@ void train(const vector<Mat_<uchar> >& input_images,
     // re-project current shapes into target shapes bounding boxes
     augment_current_shapes = reproject_shape(augment_current_shapes,target_bounding_box); 
     
-
+    // get mean_shape
+    Mat_<double> mean_shape = get_mean_shape(target_shapes);
 
     // train shape regressor, and save the model
     ShapeRegressor regressor(mean_shape,images,augment_target_shapes,
@@ -394,4 +394,19 @@ void translate_scale_rotate(const Mat_<double>& shape1, const Mat_<double>& shap
     rotation(1,1) = cos_theta;
 }
 
+Mat_<double> get_mean_shape(const vector<Mat_<double> >& shapes){
+    vector<Bbox> bbox;
+    bbox = get_bounding_box(shapes);
+    
+    vector<Mat_<double> > temp;
+    temp = project_shape(shapes,bbox);
+    
+    Mat_<double> result = Mat::zeros(shapes[0].rows,2,CV_64FC1); 
+    for(int i = 0; i < temp.size();i++){
+        result = result + temp[i]; 
+    }
 
+    result = 1.0 / (temp.size()) * result;
+
+    return result;
+}

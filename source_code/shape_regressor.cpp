@@ -54,7 +54,7 @@ void ShapeRegressor::train(){
 
         fern_cascades_[i].train(images_,target_shapes_,
                 second_level_num_,current_shapes_,pixel_pair_num_,temp1,
-                pixel_pair_in_fern_); 
+                pixel_pair_in_fern_, mean_shape_); 
     }   
 }
 
@@ -80,6 +80,14 @@ void ShapeRegressor::calcuate_normalized_matrix(vector<Mat_<double> >& normalize
  */
 void ShapeRegressor::read(ifstream& fin){
     fin>>first_level_num_;
+    fin>>landmark_num_;
+    
+    // read mean shape
+    mean_shape_ = Mat::zeros(landmark_num_,2,CV_64FC1);
+    for(int i = 0; i < landmark_num_;i++){
+        fin>>mean_shape_(i,0)>>mean_shape_(i,1);
+    }
+
     fern_cascades_.resize(first_level_num_);
     for(int i = 0;i < first_level_num_;i++){
         fern_cascades_[i].read(fin);
@@ -92,6 +100,14 @@ void ShapeRegressor::read(ifstream& fin){
  */
 void ShapeRegressor::write(ofstream& fout){
     fout<<first_level_num_<<endl;
+    fout<<landmark_num_<<endl;
+
+    // write mean shape infor
+    for(int i = 0;i < mean_shape_.rows;i++){
+        fout<<mean_shape_(i,0)<<" "<<mean_shape_(i,1)<<" "; 
+    }
+    fout<<endl;
+
     for(int i = 0;i < first_level_num_;i++){
         fern_cascades_[i].write(fout);  
     } 

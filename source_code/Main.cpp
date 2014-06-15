@@ -37,7 +37,7 @@ int main(){
     double start_y;
     double curr_width;
     double curr_height;
-    Mat_<double> mean_shape(landmark_num,2);
+    // Mat_<double> mean_shape(landmark_num,2);
     vector<Mat_<double> > target_shapes;
     for(int i = 0;i < landmark_num;i++){
         mean_shape(i,0) = 0;
@@ -67,20 +67,20 @@ int main(){
     // calculate mean shape 
     // Here the mean shape is the mean of the normalized shape 
     // Each shape is normalized into a 2*2 bounding_box.
-    for(int i = 0;i < img_num;i++){
-        Bbox temp = bbox[i];
-        for(int j = 0;j < landmark_num;j++){
-            double temp1 = (target_shapes[i](j,0) - temp.centroid_x) / (temp.width/2.0);
-            double temp2 = (target_shapes[i](j,1) - temp.centroid_y) / (temp.height/2.0);
-            mean_shape(j,0) += temp1;
-            mean_shape(j,1) += temp2;
-        } 
-    }        
-    mean_shape = 1.0/img_num * mean_shape;
+    /* for(int i = 0;i < img_num;i++){ */
+        // Bbox temp = bbox[i];
+        // for(int j = 0;j < landmark_num;j++){
+            // double temp1 = (target_shapes[i](j,0) - temp.centroid_x) / (temp.width/2.0);
+            // double temp2 = (target_shapes[i](j,1) - temp.centroid_y) / (temp.height/2.0);
+            // mean_shape(j,0) += temp1;
+            // mean_shape(j,1) += temp2;
+        // } 
+    // }        
+    /* mean_shape = 1.0/img_num * mean_shape; */
     
 
 	// start training 
-	train(images,target_shapes,mean_shape,initial_number,pixel_pair_num,
+	train(images,target_shapes,initial_number,pixel_pair_num,
 			pixel_pair_in_fern,first_level_num,second_level_num);
 	
 

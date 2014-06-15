@@ -26,7 +26,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         vector<Mat_<double> >& current_shapes,
         int pixel_pair_num,
         vector<Mat_<double> >& normalized_targets,
-        int pixel_pair_in_fern){
+        int pixel_pair_in_fern,
+        const Mat_<double>& mean_shape){
     cout<<"FernCascade train..."<<endl;
 
     second_level_num_ = second_level_num;
@@ -41,30 +42,20 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
 
 
     vector<Bbox> target_bounding_box;
-    vector<Bbox> curr_bounding_box; 
     vector<Mat_<double> > normalized_curr_shape; 
     // get bounding box of target shapes
-    for(int i = 0;i < current_shapes.size();i++){
-        Bbox temp;
-        temp = get_bounding_box(target_shapes[i]);
-        target_bounding_box.push_back(temp);
-
-        temp = get_bounding_box(current_shapes[i]);
-        curr_bounding_box.push_back(temp);
-    }
-    
-
-
+   
+    target_bounding_box = get_bounding_box(target_shapes);
 
     // calculate normalized targets
     normalized_targets = inverse_shape(current_shapes,bounding_box);
     normalized_targets = compose_shape(normalized_targets,target_shapes,bounding_box); 
     
-
-
+    
     // calculate current mean shape 
     vector<Mat_<double> > normalized_shapes;
-    // mean_shape_ = Mat::zeros(landmark_num,2,CV_64FC1);
+    /*
+    mean_shape_ = Mat::zeros(landmark_num,2,CV_64FC1);
     mean_shape_.create(landmark_num,2);
     for(int i = 0;i < current_shapes.size();i++){
         Mat_<double> temp_shape(landmark_num,2);
@@ -79,6 +70,7 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         normalized_shapes.push_back(temp_shape);
     }
     mean_shape_ = 1.0 / current_shapes.size() * mean_shape_; 
+    */
 
     // generate feature pixel location 
     for(int i = 0;i < pixel_pair_num;i++){
@@ -89,7 +81,7 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         double min_dist = 1e10;
         int min_index = 0;
         for(int j = 0;j < landmark_num;j++){
-            double temp = pow(mean_shape_(j,0) - x,2.0) + pow(mean_shape_(j,1) - y,2.0);
+            double temp = pow(mean_shape(j,0) - x,2.0) + pow(mean_shape(j,1) - y,2.0);
             if(temp < min_dist){
                 min_dist = temp;
                 min_index = j;
@@ -110,7 +102,7 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         Mat_<double> translation(landmark_num,2);
         double scale = 0;
 
-        translate_scale_rotate(normalized_shapes[i],mean_shape_,translation,scale,rotation); 
+        translate_scale_rotate(normalized_shapes[i],mean_shape,translation,scale,rotation); 
        
         for(int j = 0;j < pixel_pair_num;j++){
             double x = pixel_coordinates(j,0);
@@ -185,12 +177,6 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
 
 void FernCascade::write(ofstream& fout){
     fout<<second_level_num_<<endl;
-    fout<<mean_shape_.rows<<endl; 
-    // write mean shape 
-    for(int i = 0;i < mean_shape_.rows;i++){
-        fout<<mean_shape_(i,0)<<" "<<mean_shape_(i,1)<<" "; 
-    } 
-    fout<<endl;
 
     for(int i = 0;i < second_level_num_;i++){
         primary_fern_[i].write(fout);
@@ -198,18 +184,6 @@ void FernCascade::write(ofstream& fout){
 }
 void FernCascade::read(ifstream& fin){
     fin>>second_level_num_;
-	// second_level_num_ = 500;
-	primary_fern_.resize(second_level_num_);
-    
-    int landmark_num = 0;
-    fin>>landmark_num;
-
-    // read mean shape
-    mean_shape_.create(landmark_num,2);
-    for(int i = 0;i < landmark_num;i++){
-        fin>>mean_shape_(i,0)>>mean_shape_(i,1);
-    }
-
 
     for(int i = 0;i < second_level_num_;i++){
         primary_fern_[i].read(fin);
@@ -218,30 +192,33 @@ void FernCascade::read(ifstream& fin){
 	return;
 }
 void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box){
-    // Mat_<double> normalize_matrix = Mat_<double>::eye(2,2);
-    // Mat_<double> invert_normalized_matrix = Mat_<double>::eye(2,2);
-    // solve(shape,mean_shape,normalize_matrix,DECOMP_SVD);
-    // invert(normalize_matrix,invert_normalized_matrix,DECOMP_SVD);
+
     Mat_<double> normalize_shape = shape_normalize(shape, bounding_box); 
     Mat_<double> rotation;
     double scale;
     Mat_<double> translation;
     translate_scale_rotate(shape,mean_shape_,translation,scale,rotation); 
 
-
+    Mat_<double> prediction;
+    prediction = Mat::zeros(shape.rows,2);
     for(int i = 0;i < second_level_num_;i++){
-        Mat_<double> prediction;
-        prediction = Mat::zeros(shape.rows,2);
         primary_fern_[i].predict(image, shape, bounding_box,mean_shape_,scale, rotation,prediction);
-        shape = compose_shape(prediction, shape, bounding_box); 
-        shape = reproject_shape(shape, bounding_box);
+        // shape = compose_shape(prediction, shape, bounding_box); 
+        // shape = reproject_shape(shape, bounding_box);
     }
+    
+    shape = compose_shape(prediction,shape,bounding_box);
+    shape = reproject_shape(shape,bounding_box);
+
+     
+    /*
     Mat_<uchar> test_image_1 = image.clone();
     for(int i = 0;i < shape.rows;i++){
         circle(test_image_1,Point2d(shape(i,0),shape(i,1)),3,Scalar(255,0,0),-1,8,0);
     }
     imshow("result",test_image_1);
     waitKey(0);
+    */
 }
 
 
