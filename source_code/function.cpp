@@ -5,6 +5,16 @@
 
 #include "face.h"
 
+/**
+ * @param input_images  grayscale images of faces
+ * @param target_shapes  ground truth shapes of faces, stored as a vector of N*2 matrix
+ * @param mean_shape  mean of normalized shapes
+ * @param initial_number  for each input shape, we choose multiple initializations to learn 
+ * @param pixel_pair_num  number of pixels selected to form the feature pool
+ * @param pixel_pair_in_fern  number of pixel pairs selected to construct a fern
+ * @param first_level_num  number of first level regressors
+ * @param second_level_num  number of second level regressors
+ */
 void train(const vector<Mat_<uchar> >& input_images,                  
         const vector<Mat_<double> >& target_shapes,
         const Mat_<double>& mean_shape,
@@ -18,21 +28,23 @@ void train(const vector<Mat_<uchar> >& input_images,
     vector<Mat_<uchar> > images; 
     vector<Mat_<double> > augment_current_shapes; 
     RNG random_generator(getTickCount());
+    
     for(int i = 0;i < input_images.size();i++){
         Mat_<uchar> temp = input_images[i].clone(); 
+        // multiple initializations, use the target shape of other images as initial shape 
         for(int j = 0;j < initial_number;j++){
-            images.push_back(temp);
-            // augment_target_shapes.push_back(target_shapes[i]);
             int index = 0;
             do{
                 index = random_generator.uniform(0,input_images.size()); 
             }while(index == i);
-            // augment_current_shapes.push_back(mean_shape);
+            images.push_back(temp);
+            
             augment_current_shapes.push_back(target_shapes[index]);
             augment_target_shapes.push_back(target_shapes[i]);
         }
     }
 
+    // train shape regressor, and save the model
     ShapeRegressor regressor(mean_shape,images,augment_target_shapes,
             augment_current_shapes,first_level_num,
             second_level_num, pixel_pair_num,
@@ -100,7 +112,12 @@ void show_image(const Mat_<uchar>& input_image, const Mat_<double>&  points){
     // waitKey(2);
 }
 
-
+/**
+ * Given a shape, and its bounding_box, first normalize the shape, then inverse the result
+ * @param shapes a vector of N*2 matrix
+ * @param bounding_box a vector of Bbox 
+ * @return the inverse normalized shape of input shapes
+ */
 vector<Mat_<double> > inverse_shape(const vector<Mat_<double> >& shapes, const vector<Bbox>& bounding_box){
     vector<Mat_<double> > result;   
 
@@ -113,6 +130,13 @@ vector<Mat_<double> > inverse_shape(const vector<Mat_<double> >& shapes, const v
     return result;
 }
 
+/**
+ * Given a vector of shapes, namely shape1, shape2, normalize shape2, then return (shape1 + shape2)
+ * @param shape1 a vector of N*2 matrix
+ * @param shape2 a vector of N*2 matrix
+ * @param bounding_box bounding boxes of shape2
+ * @return shape1 + normalized(shape2) 
+ */
 vector<Mat_<double> > compose_shape(const vector<Mat_<double> >& shape1, const vector<Mat_<double> >& shape2, 
         const vector<Bbox>& bounding_box){
    
@@ -126,13 +150,33 @@ vector<Mat_<double> > compose_shape(const vector<Mat_<double> >& shape1, const v
     return result;
 }
 
+Mat_<double>  compose_shape(const Mat_<double>& shape1, const Mat_<double>& shape2, 
+        const Bbox& bounding_box){
+   
+    Mat_<double>  result;
+    result = project_shape(shape2,bounding_box);
+    
+    result = result + shape1;
+    return result;
+}
 
+
+
+
+
+/**
+ * Project the shape to a 2*2 grid centered at origin.
+ * @param shapes a vector of N*2 matrix
+ * @param bounding_box a vector of bounding boxes
+ * @return the normalized shapes 
+ */
 vector<Mat_<double> > project_shape(const vector<Mat_<double> >& shapes, const vector<Bbox>& bounding_box){
     vector<Mat_<double> > result;   
 
     for(int i = 0;i < shapes.size();i++){
         Mat_<double> temp(shapes[i].rows,2);
         for(int j = 0;j < shapes[i].rows;j++){
+            // center the shape at the origin
             temp(j,0) = (shapes[i](j,0)-bounding_box[i].centroid_x) / (bounding_box[i].width / 2.0);
             temp(j,1) = (shapes[i](j,1)-bounding_box[i].centroid_y) / (bounding_box[i].height / 2.0);  
         } 
@@ -141,6 +185,24 @@ vector<Mat_<double> > project_shape(const vector<Mat_<double> >& shapes, const v
     return result; 
 }
 
+Mat_<double> project_shape(const Mat_<double>& shapes, const Bbox& bounding_box){
+
+    Mat_<double> temp(shapes.rows,2);
+    for(int j = 0;j < shapes.rows;j++){
+        // center the shape at the origin
+        temp(j,0) = (shapes(j,0)-bounding_box.centroid_x) / (bounding_box.width / 2.0);
+        temp(j,1) = (shapes(j,1)-bounding_box.centroid_y) / (bounding_box.height / 2.0);  
+    } 
+
+    return temp; 
+}
+
+/**
+ * Reproject the shape to original size.
+ * @param shapes a vector of N*2 matrix
+ * @param bounding_box a vector of bounding boxes
+ * @return reprojected shapes
+ */
 vector<Mat_<double> > reproject_shape(const vector<Mat_<double> >& shapes, const vector<Bbox>& bounding_box){
     vector<Mat_<double> > result;   
 
@@ -155,18 +217,37 @@ vector<Mat_<double> > reproject_shape(const vector<Mat_<double> >& shapes, const
     return result; 
 }
 
+Mat_<double> reproject_shape(const Mat_<double>& shapes, const Bbox& bounding_box){
+
+    Mat_<double> temp(shapes.rows,2);
+    for(int j = 0;j < shapes.rows;j++){
+        temp(j,0) = (shapes(j,0) * bounding_box.width / 2.0 + bounding_box.centroid_x);
+        temp(j,1) = (shapes(j,1) * bounding_box.height / 2.0 + bounding_box.centroid_y);
+    } 
+    return temp; 
+}
+
+/**
+ * Reproject the shape to original size.
+ * @param shape a vector of N*2 matrix
+ * @param bounding_box a vector of bounding boxes
+ * @return reprojected shapes
+ */
 Mat_<double> reproject_shape_single(const Mat_<double>& shape, const Bbox& bounding_box){
     Mat_<double> result(shape.rows,2);   
-    for(int j = 0;j < shapes.rows;j++){
+    for(int j = 0;j < shape.rows;j++){
         result(j,0) = (shape(j,0) * bounding_box.width / 2.0 + bounding_box.centroid_x);
         result(j,1) = (shape(j,1) * bounding_box.height / 2.0 + bounding_box.centroid_y);
     } 
     return result;  
 }
 
+/**
+ * @param shape input shapes
+ * @param bounding_box bounding box of shape
+ * @return the normalized shape
+ */
 Mat_<double> shape_normalize(const Mat_<double>& shape, const Bbox& bounding_box){    
-    // Bbox bounding_box = get_bounding_box(shape);
-    
     Mat_<double> result(shape.rows,2);
     for(int i = 0;i < shape.rows;i++){
         result(i,0) = (shape(i,0) - bounding_box.centroid_x) / (bounding_box.width / 2.0);
@@ -175,11 +256,15 @@ Mat_<double> shape_normalize(const Mat_<double>& shape, const Bbox& bounding_box
     return result; 
 } 
 
+/**
+ * @param shape input shape
+ * @return the bounding box
+ */
 Bbox get_bounding_box(const Mat_<double>& shape){
-    double min_x = shape(i,0);
-    double min_y = shape(i,1);
-    double max_x = shape(i,0);
-    double max_y = shape(i,1);
+    double min_x = shape(0,0);
+    double min_y = shape(0,1);
+    double max_x = shape(0,0);
+    double max_y = shape(0,1);
     for(int i = 0;i < shape.rows;i++){
         if(shape(i,0) < min_x){
             min_x = shape(i,0);
@@ -196,22 +281,31 @@ Bbox get_bounding_box(const Mat_<double>& shape){
     }
 
     Bbox result;
-    result.start_x = max(0,min_x-10);
-    result.start_y = max(0,min_y-10);
+    result.start_x = min_x - 10;
+    result.start_y = min_y - 10; 
     double end_x = max_x;
     double end_y = max_y;
-    result.width = end_x - start_x;
-    result.height = end_y - start_y;
+    result.width = end_x - result.start_x;
+    result.height = end_y - result.start_y;
     result.centroid_x = result.start_x + result.width / 2.0; 
     result.centroid_y = result.start_y + result.height / 2.0;
     return result;
 }
 
 
-
-
+/**
+ * Given shape1, and shape2, calculate the translation, scale, and rotation that maps shape2
+ * to its closest approximation to shape1, that is, 
+ * shape1 = sR * shape2 + T
+ * @param shape1 input shape
+ * @param shape2 input shape
+ * @param translation n*2 translation matrix
+ * @param scale scale value
+ * @param rotation rotation matrix 
+ */
 void translate_scale_rotate(const Mat_<double>& shape1, const Mat_<double>& shape2, 
         Mat_<double>& translation, double &scale, Mat_<double>& rotation){
+
     translation = Mat::zeros(shape1.rows,2,CV_64FC1);
     rotation = Mat::zeros(2,2,CV_64FC1);
     scale = 0;
@@ -240,10 +334,13 @@ void translate_scale_rotate(const Mat_<double>& shape1, const Mat_<double>& shap
         temp1(i,1) -= center_y_1;
         temp2(i,0) -= center_x_2;
         temp2(i,1) -= center_y_2;
-    } 
+    }
+
+     
     Mat_<double> covariance1, covariance2;
     Mat_<double> mean1,mean2;
-
+    
+    // calculate covariance matrix
     calcCovarMatrix(temp1,covariance1,mean1,CV_COVAR_COLS);
     calcCovarMatrix(temp2,covariance2,mean2,CV_COVAR_COLS);
 

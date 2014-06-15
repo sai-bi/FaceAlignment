@@ -27,6 +27,7 @@ void Fern::train(const vector<vector<double> >& pixel_density,
         int pixel_pair_num_in_fern,
         vector<Mat_<double> >& normalized_targets,
         vector<Mat_<double> >& prediction){
+
     pixel_pair_num_in_fern_ = pixel_pair_num_in_fern;
     nearest_keypoint_index_ = nearest_keypoint_index.clone();
     pixel_coordinates_ = pixel_coordinates.clone();
@@ -36,13 +37,12 @@ void Fern::train(const vector<vector<double> >& pixel_density,
     RNG random_generator(getTickCount());
     pixel_pair_selected_index_.create(pixel_pair_num_in_fern,2);
 
+
     for(int i = 0;i < pixel_pair_num_in_fern_;i++){
 		// get a random direction
         Mat_<double> random_direction(landmark_num * 2,1);
         random_generator.fill(random_direction,RNG::UNIFORM,-1.1,1.1);
         normalize(random_direction,random_direction);
-        // random_generator.fill(random_direction,RNG::,-1,1);
-        // normalize(random_direction,random_direction);
         vector<double> project_result;
         
 		// project the normalize targets to random direction
@@ -131,11 +131,8 @@ void Fern::train(const vector<vector<double> >& pixel_density,
         density_difference_range(i,1) = max_value;
     }
 	// get threshold
-    //Mat_<double> threshold(pixel_pair_num_in_fern,1);
 	threshold_.create(pixel_pair_num_in_fern_,1);
 	for(int i = 0;i < pixel_pair_num_in_fern;i++){
-        // double lower_value = 0.7 * density_difference_range(i,0) + 0.3 * density_difference_range(i,1);
-        // double upper_value = 0.3 * density_difference_range(i,0) + 0.7 * density_difference_range(i,1); 
         double temp1 = abs(density_difference_range(i,0));
         double temp2 = abs(density_difference_range(i,1));
         double temp3 = temp1 > temp2 ? temp1 : temp2; 
@@ -250,10 +247,10 @@ void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding
         project_x = project_x * bounding_box.width/2.0 + shape(keypoint_index1,0);
         project_y = project_y * bounding_box.height/2.0 + shape(keypoint_index1,1);
         
-        project_x = max(project_x,0);
-        project_y = max(project_y,0);
-        project_x = min(project_x,image.cols-1);
-        project_y = min(project_y,image.rows-1);
+        project_x = std::max(project_x,0.0);
+        project_y = std::max(project_y,0.0);
+        project_x = std::min(project_x,image.cols-1.0);
+        project_y = std::min(project_y,image.rows-1.0);
 
         double intensity_1 = (int)(image(project_y,project_x));
 
@@ -263,10 +260,10 @@ void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding
         project_y = scale * (rotation(1,0)*x + rotation(1,1)*y);
         project_x = project_x * bounding_box.width/2.0 + shape(keypoint_index2,0);
         project_y = project_y * bounding_box.height/2.0 + shape(keypoint_index2,1);
-        project_x = max(project_x,0);
-        project_y = max(project_y,0);
-        project_x = min(project_x,image.cols-1);
-        project_y = min(project_y,image.rows-1);
+        project_x = std::max(project_x,0.0);
+        project_y = std::max(project_y,0.0);
+        project_x = std::min(project_x,image.cols-1.0);
+        project_y = std::min(project_y,image.rows-1.0);
 
         double intensity_2 = (int)(image(project_y,project_x));
 
@@ -274,7 +271,10 @@ void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding
             bin_index = bin_index + (int)(pow(2.0,i));
         }
     } 
-     
+    
+
+    
+
     shape = shape + bin_output_[bin_index];
     shape = compose_shape(bin_output_[bin_index],shape, bounding_box);
     shape = reproject_shape(shape,bounding_box);

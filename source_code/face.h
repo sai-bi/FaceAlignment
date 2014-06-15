@@ -57,8 +57,8 @@ class Fern{
                 int pixel_pair_num_in_fern,
                 vector<Mat_<double> >& normalized_targets,
                 vector<Mat_<double> >& prediction);
-        void predict(const Mat_<uchar>& image, Mat_<double>& shape,
-                const Mat_<double>& invert_normalized_matrix);
+        void predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box,const Mat_<double>& mean_shape,
+                double scale, const Mat_<double>& rotation);
         void write(ofstream& fout);
         void read(ifstream& fin);
 
@@ -68,7 +68,7 @@ class FernCascade{
         vector<Fern> primary_fern_;
         int second_level_num_;
         vector<Bbox> bounding_box;
-        vector<Mat_<double> > mean_shape_;
+        Mat_<double> mean_shape_;
     public:
         FernCascade();
         void train(const vector<Mat_<uchar> >& images,
@@ -78,7 +78,7 @@ class FernCascade{
                 int pixel_pair_num,
                 vector<Mat_<double> >& normalized_targets,
                 int pixel_pair_in_fern);
-        void predict(const Mat_<uchar>& image, Mat_<double>& shape);
+        void predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box);
         void write(ofstream& fout);
         void read(ifstream& fin);        
 };
@@ -97,6 +97,7 @@ class ShapeRegressor{
         int img_width_;
         int img_height_;
         int pixel_pair_in_fern_; 
+        Mat_<double> mean_shape_;
         void read(ifstream& fin);
         void write(ofstream& fout);
         void calcuate_normalized_matrix(vector<Mat_<double> >&);
@@ -113,7 +114,7 @@ class ShapeRegressor{
         void load(const char* file_name);
         void save(const char* file_name);
         void train();
-        void predict(const Mat_<uchar>& image, Mat_<double>& shape);
+        void predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box);
         void calcSimil(const Mat_<double> &src,const Mat_<double> &dst,
                 double &a,double &b,double &tx,double &ty);
         void invSimil(double a1,double b1,double tx1,double ty1,
@@ -142,7 +143,30 @@ Mat_<double> test(ShapeRegressor& regressor,const Mat_<uchar>& image, const vect
 
 void show_image(const Mat_<uchar>& input_image, const Mat_<double>&  points);
 
+void translate_scale_rotate(const Mat_<double>& shape1, const Mat_<double>& shape2, 
+        Mat_<double>& translation, double &scale, Mat_<double>& rotation);
 
+Bbox get_bounding_box(const Mat_<double>& shape);
+
+Mat_<double> shape_normalize(const Mat_<double>& shape, const Bbox& bounding_box);
+
+Mat_<double> reproject_shape_single(const Mat_<double>& shape, const Bbox& bounding_box);
+
+vector<Mat_<double> > reproject_shape(const vector<Mat_<double> >& shapes, const vector<Bbox>& bounding_box);
+
+vector<Mat_<double> > project_shape(const vector<Mat_<double> >& shapes, const vector<Bbox>& bounding_box);
+
+vector<Mat_<double> > compose_shape(const vector<Mat_<double> >& shape1, const vector<Mat_<double> >& shape2, 
+        const vector<Bbox>& bounding_box);
+
+vector<Mat_<double> > inverse_shape(const vector<Mat_<double> >& shapes, const vector<Bbox>& bounding_box);
+
+Mat_<double> project_shape(const Mat_<double>& shapes, const Bbox& bounding_box);
+
+Mat_<double>  compose_shape(const Mat_<double>& shape1, const Mat_<double>& shape2, 
+        const Bbox& bounding_box);
+
+Mat_<double> reproject_shape(const Mat_<double>& shapes, const Bbox& bounding_box);
 #endif
 
 

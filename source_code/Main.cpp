@@ -5,6 +5,8 @@
 #include "face.h"
 
 int main(){
+
+    // parameters
     int img_num = 716;
     int pixel_pair_num = 400;
     int pixel_pair_in_fern = 5;
@@ -12,15 +14,15 @@ int main(){
     int second_level_num = 500; 
     int landmark_num = 35;
     int initial_number = 1;
-
-
     vector<Mat_<uchar> > images;
     int average_height = 0;
     int average_width = 0;
-         
-    vector<Bbox> shape_boundingbox; 
-    cout<<"Read images..."<<endl;
     
+    // bounding box for each face 
+    vector<Bbox> bbox; 
+    
+    // read images
+    cout<<"Read images..."<<endl;
     for(int i = 0;i < img_num;i++){
         string image_name = "./../data/LFPW/lfpwFaces/";
         image_name = image_name + to_string(i+1) + ".jpg";
@@ -28,9 +30,7 @@ int main(){
         images.push_back(temp);
     }
     
-
-
-
+    // read keypoints information
     ifstream fin;
     fin.open("./../data/LFPW/keypointsInfor.txt"); 
     double start_x;
@@ -58,17 +58,15 @@ int main(){
         double keypoint_y;
         for(int i = 0;i < 35;i++){
             fin>>keypoint_x>>keypoint_y;
-            // keypoint_x = keypoint_x * average_width / curr_width;
-            // keypoint_y = keypoint_y * average_height / curr_height;
             temp(i,0) = keypoint_x;
             temp(i,1) = keypoint_y;
-            // mean_shape(i,0) += keypoint_x;
-            // mean_shape(i,1) += keypoint_y;
         }
         target_shapes.push_back(temp);
     }  
         
     // calculate mean shape 
+    // Here the mean shape is the mean of the normalized shape 
+    // Each shape is normalized into a 2*2 bounding_box.
     for(int i = 0;i < img_num;i++){
         Bbox temp = bbox[i];
         for(int j = 0;j < landmark_num;j++){
@@ -79,10 +77,11 @@ int main(){
         } 
     }        
     mean_shape = 1.0/img_num * mean_shape;
+    
 
-	
+	// start training 
 	train(images,target_shapes,mean_shape,initial_number,pixel_pair_num,
-			pixel_pair_in_fern,first_level_num,second_level_num,bbox);
+			pixel_pair_in_fern,first_level_num,second_level_num);
 	
 
     return 0;
