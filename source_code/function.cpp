@@ -35,7 +35,8 @@ void train(const vector<Mat_<uchar> >& input_images,
         for(int j = 0;j < initial_number;j++){
             int index = 0;
             do{
-                index = random_generator.uniform(0,input_images.size()); 
+                // index = random_generator.uniform(0,input_images.size()); 
+                index = (i + 1) % (input_images.size());
             }while(index == i);
             images.push_back(temp);
             
@@ -43,6 +44,20 @@ void train(const vector<Mat_<uchar> >& input_images,
             augment_target_shapes.push_back(target_shapes[i]);
         }
     }
+    
+    // get current shapes bounding boxes
+    vector<Bbox> curr_bounding_box;
+    vector<Bbox> target_bounding_box;
+
+    curr_bounding_box = get_bounding_box(augment_current_shapes);
+    target_bounding_box = get_bounding_box(augment_target_shapes);
+
+    // normalize current_shapes
+    augment_current_shapes = project_shape(augment_current_shapes,curr_bounding_box);
+    // re-project current shapes into target shapes bounding boxes
+    augment_current_shapes = reproject_shape(augment_current_shapes,target_bounding_box); 
+    
+
 
     // train shape regressor, and save the model
     ShapeRegressor regressor(mean_shape,images,augment_target_shapes,
@@ -61,14 +76,14 @@ Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vec
     for(int i = 0;i < initial_number;i++){
         int index = 0;
         do{
-            index = random_generator.uniform(0,target_shapes.size());  
+            // index = random_generator.uniform(0,target_shapes.size());  
+            index = 11; 
         }while(index == i);
         Mat_<double> shape = target_shapes[index].clone();
         // Mat_<double> shape = mean_shape.clone();
-        Bbox bounding_box_1 = get_bounding_box(shape);
-        shape = shape_normalize(shape,bounding_box_1);
-        shape = reproject_shape_single(shape,bounding_box); 
-
+        // Bbox bounding_box_1 = get_bounding_box(shape);
+        // shape = shape_normalize(shape,bounding_box_1);
+        // shape = reproject_shape_single(shape,bounding_box); 
         regressor.predict(image,shape,bounding_box);
         if(i == 0){
             combine_shape = shape.clone();
@@ -290,6 +305,14 @@ Bbox get_bounding_box(const Mat_<double>& shape){
     result.centroid_x = result.start_x + result.width / 2.0; 
     result.centroid_y = result.start_y + result.height / 2.0;
     return result;
+}
+
+vector<Bbox> get_bounding_box(const vector<Mat_<double> >& shapes){
+    vector<Bbox> bbox;
+    for(int i = 0;i < shapes.size();i++){
+        bbox.push_back(get_bounding_box(shapes[i])); 
+    }
+    return bbox;
 }
 
 

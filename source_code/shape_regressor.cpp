@@ -47,14 +47,10 @@ ShapeRegressor::ShapeRegressor(const Mat_<double>& mean_shape,
  */
 void ShapeRegressor::train(){
     cout<<"ShapeRegressor training..."<<endl;
-
+    
     // get bounding box
     for(int i = 0;i < first_level_num_;i++){
-
-       
         vector<Mat_<double> > temp1;
-        // temp1 = inverse_shape(current_shapes_,bounding_box);
-        // temp1 = compose_shape(temp1,target_shapes,bounding_box); 
 
         fern_cascades_[i].train(images_,target_shapes_,
                 second_level_num_,current_shapes_,pixel_pair_num_,temp1,

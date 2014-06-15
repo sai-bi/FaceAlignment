@@ -58,7 +58,7 @@ class Fern{
                 vector<Mat_<double> >& normalized_targets,
                 vector<Mat_<double> >& prediction);
         void predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box,const Mat_<double>& mean_shape,
-                double scale, const Mat_<double>& rotation);
+                double scale, const Mat_<double>& rotation, Mat_<double>& prediction);
         void write(ofstream& fout);
         void read(ifstream& fin);
 
@@ -167,6 +167,8 @@ Mat_<double>  compose_shape(const Mat_<double>& shape1, const Mat_<double>& shap
         const Bbox& bounding_box);
 
 Mat_<double> reproject_shape(const Mat_<double>& shapes, const Bbox& bounding_box);
+
+vector<Bbox> get_bounding_box(const vector<Mat_<double> >& shapes);
 #endif
 
 

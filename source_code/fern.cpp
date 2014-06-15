@@ -227,7 +227,7 @@ void Fern::write(ofstream& fout){
 
 
 void Fern::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box,const Mat_<double>& mean_shape,
-        double scale, const Mat_<double>& rotation){  
+        double scale, const Mat_<double>& rotation, Mat_<double>& prediction){  
     int bin_index = 0;
     for(int i = 0;i < pixel_pair_num_in_fern_;i++){
         int keypoint_index1 = nearest_keypoint_index_(i,0);

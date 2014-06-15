@@ -40,13 +40,21 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     int image_height = images[0].rows;
 
 
-    vector<Bbox> bounding_box;
-
+    vector<Bbox> target_bounding_box;
+    vector<Bbox> curr_bounding_box; 
+    vector<Mat_<double> > normalized_curr_shape; 
+    // get bounding box of target shapes
     for(int i = 0;i < current_shapes.size();i++){
         Bbox temp;
+        temp = get_bounding_box(target_shapes[i]);
+        target_bounding_box.push_back(temp);
+
         temp = get_bounding_box(current_shapes[i]);
-        bounding_box.push_back(temp);
+        curr_bounding_box.push_back(temp);
     }
+    
+
+
 
     // calculate normalized targets
     normalized_targets = inverse_shape(current_shapes,bounding_box);
@@ -163,7 +171,15 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     }
     
     current_shapes = compose_shape(prediction, current_shapes, bounding_box); 
-    current_shapes = reproject_shape(current_shapes,bounding_box); 
+    current_shapes = reproject_shape(current_shapes,bounding_box);
+   
+    // Mat_<uchar> test_image_1 = images[10].clone();
+    // for(int i = 0;i < landmark_num;i++){
+        // circle(test_image_1,Point2d(current_shapes[10](i,0),current_shapes[10](i,1)),3,Scalar(255,0,0),-1,8,0);
+    // }
+    // imshow("result",test_image_1);
+    // waitKey(0); 
+
 }
 
 
@@ -212,9 +228,13 @@ void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& b
     Mat_<double> translation;
     translate_scale_rotate(shape,mean_shape_,translation,scale,rotation); 
 
-    for(int i = 0;i < second_level_num_;i++){
-        primary_fern_[i].predict(image,shape, bounding_box,mean_shape_,scale, rotation);
 
+    for(int i = 0;i < second_level_num_;i++){
+        Mat_<double> prediction;
+        prediction = Mat::zeros(shape.rows,2);
+        primary_fern_[i].predict(image, shape, bounding_box,mean_shape_,scale, rotation,prediction);
+        shape = compose_shape(prediction, shape, bounding_box); 
+        shape = reproject_shape(shape, bounding_box);
     }
     Mat_<uchar> test_image_1 = image.clone();
     for(int i = 0;i < shape.rows;i++){
