@@ -149,12 +149,12 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     current_shapes = compose_shape(prediction, current_shapes, target_bounding_box); 
     current_shapes = reproject_shape(current_shapes, target_bounding_box);
    
-    // Mat_<uchar> test_image_1 = images[10].clone();
+    /* Mat_<uchar> test_image_1 = images[10].clone(); */
     // for(int i = 0;i < landmark_num;i++){
         // circle(test_image_1,Point2d(current_shapes[10](i,0),current_shapes[10](i,1)),3,Scalar(255,0,0),-1,8,0);
     // }
     // imshow("result",test_image_1);
-    // waitKey(0); 
+    /* waitKey(0);  */
 
 }
 
@@ -178,11 +178,12 @@ void FernCascade::read(ifstream& fin){
 }
 void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box, const Mat_<double>& mean_shape){
 
-    Mat_<double> normalize_shape = shape_normalize(shape, bounding_box); 
+    // Mat_<double> normalize_shape = shape_normalize(shape, bounding_box); 
+    Mat_<double> normalized_shape = project_shape(shape, bounding_box);
     Mat_<double> rotation;
     double scale;
     Mat_<double> translation;
-    translate_scale_rotate(shape,mean_shape,translation,scale,rotation); 
+    translate_scale_rotate(normalized_shape,mean_shape,translation,scale,rotation); 
 
     Mat_<double> prediction;
     prediction = Mat::zeros(shape.rows,2,CV_64FC1);
@@ -196,14 +197,14 @@ void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& b
     shape = reproject_shape(shape,bounding_box);
 
      
-    /*
-    Mat_<uchar> test_image_1 = image.clone();
-    for(int i = 0;i < shape.rows;i++){
-        circle(test_image_1,Point2d(shape(i,0),shape(i,1)),3,Scalar(255,0,0),-1,8,0);
-    }
-    imshow("result",test_image_1);
-    waitKey(0);
-    */
+    
+    /* Mat_<uchar> test_image_1 = image.clone(); */
+    // for(int i = 0;i < shape.rows;i++){
+        // circle(test_image_1,Point2d(shape(i,0),shape(i,1)),3,Scalar(255,0,0),-1,8,0);
+    // }
+    // imshow("result",test_image_1);
+    /* waitKey(0); */
+    
 }
 
 

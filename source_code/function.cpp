@@ -34,8 +34,8 @@ void train(const vector<Mat_<uchar> >& input_images,
         for(int j = 0;j < initial_number;j++){
             int index = 0;
             do{
-                // index = random_generator.uniform(0,input_images.size()); 
-                index = (i + 1) % (input_images.size());
+                index = random_generator.uniform(0,input_images.size()); 
+                // index = (i + 1) % (input_images.size());
             }while(index == i);
             images.push_back(temp);
             
@@ -76,8 +76,7 @@ Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vec
     for(int i = 0;i < initial_number;i++){
         int index = 0;
         do{
-            // index = random_generator.uniform(0,target_shapes.size());  
-            index = 11; 
+            index = random_generator.uniform(0,target_shapes.size());  
         }while(index == i);
         Mat_<double> shape = target_shapes[index].clone();
 

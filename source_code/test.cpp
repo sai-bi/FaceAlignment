@@ -12,7 +12,7 @@ int main(){
     int first_level_num = 10;
     int second_level_num = 500; 
     int landmark_num = 35;
-    int initial_number = 1;
+    int initial_number = 40;
 
 
     vector<Mat_<uchar> > images;
@@ -78,11 +78,11 @@ int main(){
         for(int i = 0;i < landmark_num;i++){
             circle(test_image_1,Point2d(current_shape(i,0),current_shape(i,1)),3,Scalar(255,0,0),-1,8,0);
         }
-        for(int i = 0;i < landmark_num;i++){
-            circle(test_image_1,Point2d(target_shapes[index-1](i,0),target_shapes[index-1](i,1)),3,Scalar(0,0,255),-1,8,0);
-        }
+        // for(int i = 0;i < landmark_num;i++){
+            // circle(test_image_1,Point2d(target_shapes[index-1](i,0),target_shapes[index-1](i,1)),3,Scalar(0,0,255),-1,8,0);
+        // }
         imshow("result",test_image_1);
-        // waitKey(0);
+        waitKey(0);
     }
     return 0;
 
