@@ -21,11 +21,16 @@ void train(const vector<Mat_<uchar> >& input_images,
         int pixel_pair_num,
         int pixel_pair_in_fern,
         int first_level_num,
-        int second_level_num){
+        int second_level_num,
+        const vector<Bbox>& target_bounding_box){
+
     cout<<"Start training..."<<endl;
     vector<Mat_<double> > augment_target_shapes;
     vector<Mat_<uchar> > images; 
     vector<Mat_<double> > augment_current_shapes; 
+    vector<Bbox> augment_target_bounding_box;
+    vector<Bbox> augment_current_bounding_box;
+    
     RNG random_generator(getTickCount());
     
     for(int i = 0;i < input_images.size();i++){
@@ -40,37 +45,47 @@ void train(const vector<Mat_<uchar> >& input_images,
             images.push_back(temp);
             
             augment_current_shapes.push_back(target_shapes[index]);
+            augment_current_bounding_box.push_back(target_bounding_box[index]);
             augment_target_shapes.push_back(target_shapes[i]);
+            augment_target_bounding_box.push_back(target_bounding_box[i]);
         }
     }
     
     // get current shapes bounding boxes
     vector<Bbox> curr_bounding_box;
-    vector<Bbox> target_bounding_box;
+    // vector<Bbox> target_bounding_box;
 
-    curr_bounding_box = get_bounding_box(augment_current_shapes);
-    target_bounding_box = get_bounding_box(augment_target_shapes);
+    // curr_bounding_box = get_bounding_box(augment_current_shapes);
+    // target_bounding_box = get_bounding_box(augment_target_shapes);
 
     // normalize current_shapes
-    augment_current_shapes = project_shape(augment_current_shapes,curr_bounding_box);
+    // augment_current_shapes = project_shape(augment_current_shapes,curr_bounding_box);
     // re-project current shapes into target shapes bounding boxes
-    augment_current_shapes = reproject_shape(augment_current_shapes,target_bounding_box); 
+    // augment_current_shapes = reproject_shape(augment_current_shapes,target_bounding_box); 
     
     // get mean_shape
     Mat_<double> mean_shape = get_mean_shape(target_shapes);
+    
+    augment_current_shapes = project_shape(augment_current_shapes,augment_current_bounding_box);
+    augment_current_shapes = reproject_shape(augment_current_shapes,augment_target_bounding_box); 
+    
+    mean_shape = get_mean_shape(target_shapes); 
+    
 
     // train shape regressor, and save the model
     ShapeRegressor regressor(mean_shape,images,augment_target_shapes,
             augment_current_shapes,first_level_num,
             second_level_num, pixel_pair_num,
-            pixel_pair_in_fern);
+            pixel_pair_in_fern,
+            augment_target_bounding_box);
     regressor.train();
-    regressor.save("./data/model.txt");
+    regressor.save("./data/model_cofw.txt");
 }
 
 Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vector<Mat_<double> > target_shapes,
         Bbox& bounding_box,
-        int initial_number){
+        int initial_number,
+        const vector<Bbox>& target_bounding_box){
     RNG random_generator(getTickCount()); 
     Mat_<double> combine_shape;
     for(int i = 0;i < initial_number;i++){
@@ -80,14 +95,11 @@ Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vec
         }while(index == i);
         Mat_<double> shape = target_shapes[index].clone();
 
-        Bbox temp = get_bounding_box(shape);
+        // Bbox temp = get_bounding_box(shape);
+        Bbox temp = target_bounding_box[index];
         shape = project_shape(shape,temp);
         shape = reproject_shape(shape,bounding_box); 
 
-        // Mat_<double> shape = mean_shape.clone();
-        // Bbox bounding_box_1 = get_bounding_box(shape);
-        // shape = shape_normalize(shape,bounding_box_1);
-        // shape = reproject_shape_single(shape,bounding_box); 
         regressor.predict(image,shape,bounding_box);
         if(i == 0){
             combine_shape = shape.clone();

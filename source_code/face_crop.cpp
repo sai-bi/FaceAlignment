@@ -13,120 +13,58 @@
 #include <stdlib.h>
 #include <fstream>
 #include <algorithm>
+#include "face.h" 
 using namespace std;
 using namespace cv;
 
-string face_cascade_name = "./../data/haarcascade_frontalface_alt.xml";
-CascadeClassifier face_cascade;
-string window_name = "Capture - Face detection";
-
-
-int validImageCount = 0;
-ofstream fout;
-RNG rng(12345);
-
-double min(double a, double b){
-    return (a < b ? a : b);
-}
-
-double max(double a, double b){
-    return (a > b ? a : b);
-}
-void detectAndDisplay(Mat frame,string fileName,const vector<double>& xCor, const vector<double>& yCor)
-{
-    Mat croppedImage;
-    Mat img = frame.clone();
-    Rect cropRectangle;
-    double minX = *min_element(xCor.begin(),xCor.end());
-    double minY = *min_element(yCor.begin(),yCor.end());
-    double maxX = *max_element(xCor.begin(),xCor.end());
-    double maxY = *max_element(yCor.begin(),yCor.end());
-
-    cropRectangle.x = int(max(minX - 10 ,1));
-    cropRectangle.y = int(max(minY - 10 ,1));
-    cropRectangle.width = int(min(maxX - minX + 20.0,frame.size().width - cropRectangle.x-1));
-    cropRectangle.height = int(min(maxY - minY + 20.0,frame.size().height-cropRectangle.y-1));
-
-    cout<<cropRectangle.x<<" "<<cropRectangle.y<<" "<<cropRectangle.width<<" "<<cropRectangle.height<<endl;
-
-    // if(cropRectangle.width < 0 || cropRectangle.height < 0){
-        // validImageCount--;
-        // return;
-    // }
-
-    // try{
-        // img(cropRectangle).copyTo(croppedImage);
-    // }catch(int e){
-        // validImageCount--;
-        // return;
-    // }
-    imwrite(fileName,img);
-
-    fout<<cropRectangle.x<<" "<<cropRectangle.y
-        <<" "
-        <<cropRectangle.width<<" "<<cropRectangle.height<<endl;
-    for(int i = 0;i < xCor.size();i++){
-        fout<<xCor[i] - cropRectangle.x<<" "<<yCor[i] - cropRectangle.y<<" ";
-    }  
-    fout<<endl;
-
-}
 
 
 int main(){
+    
+    vector<Mat_<double> > shapes;
+    vector<Bbox> bounding_box;
+
+
+    int landmark_num = 29;
+    int img_num = 1345;
+    Mat_<uchar> img = imread("./../../CRP/rcpr_v2/data/trainingImages/16.jpg",0);
+     
     ifstream fin;
-    fin.open("./../data/LFPW/kbvt_lfpw_v1_train.csv.csv");
-    fout.open("./../data/LFPW/keypointsInfor.txt");
-
-    int imgCount = 0;
-    string url;
-    string worker;
-
-    Mat img;
-
-    while(fin>>url>>worker){
-        vector<double> xCor;
-        vector<double> yCor;
-        double temp1;
-        double temp2;
-        double temp3;
-
-        for(int i = 0;i < 35;i++){
-            fin>>temp1>>temp2>>temp3;
-            xCor.push_back(temp1);
-            yCor.push_back(temp2);
-        }
-
-        if(worker != "average")
-            continue;
-        imgCount++;
-        try{
-            string temp = to_string(imgCount);
-            string imgName = "./../data/LFPW/lfpwImages/" + temp + ".jpg";
-
-
-
-            img = imread(imgName.c_str()); 
-            if(img.empty()){
-                continue;
-            }
-        }catch(int e){
-            cout<<"Fail to read images"<<endl;
-            continue;
-        }
-        validImageCount++; 
-        // cout<<validImageCount<<" "<<imgCount<<endl;
-        string temp = to_string(validImageCount);
-        string imgName = "./../data/LFPW/lfpwFaces/" + temp + ".jpg";
-
-        detectAndDisplay(img,imgName,xCor,yCor);
-    } 
+    fin.open("./../../CRP/rcpr_v2/data/boundingbox.txt");
+    
+    for(int i = 0;i < img_num;i++){
+        Bbox temp;
+        fin>>temp.start_x>>temp.start_y>>temp.width>>temp.height;
+        bounding_box.push_back(temp);
+    }
 
     fin.close();
-    fout.close();
 
-    return 0;
+    fin.open("./../../CRP/rcpr_v2/data/keypoints.txt");
+    for(int i = 0;i < img_num;i++){
+        Mat_<double> temp(landmark_num,2);
+        for(int j = 0;j < landmark_num;j++){
+            fin>>temp(j,0); 
+        }
+        for(int j = 0;j < landmark_num;j++){
+            fin>>temp(j,1); 
+        }
+        shapes.push_back(temp);
+    }
+    for(int j = 0;j < img_num;j++){
+        Mat_<uchar> img = imread("./../../CRP/rcpr_v2/data/trainingImages/" + to_string(j+1) + ".jpg",0);
+        Bbox temp = bounding_box[j];  
+        rectangle(img,Point2d(temp.start_x,temp.start_y), Point2d(temp.start_x + temp.width, temp.start_y + temp.height), Scalar(255,0,0),2); 
 
+        Mat_<double> temp1 = shapes[j];
+        for(int i = 0;i < landmark_num;i++){
+            circle(img, Point2d(temp1(i,0),temp1(i,1)), 3, Scalar(255,0,0));
+        }
+        imshow("result",img);
+        waitKey(0);
+    } 
+
+    return 0; 
 }
 
 

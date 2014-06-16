@@ -27,7 +27,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         int pixel_pair_num,
         vector<Mat_<double> >& normalized_targets,
         int pixel_pair_in_fern,
-        const Mat_<double>& mean_shape){
+        const Mat_<double>& mean_shape,
+        const vector<Bbox>& target_bounding_box){
     cout<<"FernCascade train..."<<endl;
 
     second_level_num_ = second_level_num;
@@ -40,20 +41,15 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     int image_width = images[0].cols;
     int image_height = images[0].rows;
 
-    vector<Bbox> target_bounding_box;
     vector<Mat_<double> > normalized_curr_shape; 
     // get bounding box of target shapes
    
-    target_bounding_box = get_bounding_box(target_shapes);
-    
     vector<Mat_<double> > normalized_shapes;
     normalized_shapes = project_shape(current_shapes,target_bounding_box);
     // calculate normalized targets
     normalized_targets = inverse_shape(current_shapes,target_bounding_box);
     normalized_targets = compose_shape(normalized_targets,target_shapes,target_bounding_box); 
     
-    
-    // calculate current mean shape 
 
 
     // generate feature pixel location 

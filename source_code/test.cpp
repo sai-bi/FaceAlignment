@@ -65,11 +65,20 @@ int main(){
     while(true){
         int index = 1;
         cout<<"Input index:"<<endl;
-        cin>>index;
-        Mat_<uchar> test_image = imread("./../data/LFPW/lfpwFaces/" + to_string(index) + ".jpg",0);
-        Mat test_image_1 = imread("./../data/LFPW/lfpwFaces/" + to_string(index) + ".jpg");
-        
-        Bbox box = get_bounding_box(target_shapes[index-1]); 
+        // cin>>index;
+        // Mat_<uchar> test_image = imread("./../data/LFPW/lfpwFaces/" + to_string(index) + ".jpg",0);
+        // Mat test_image_1 = imread("./../data/LFPW/lfpwFaces/" + to_string(index) + ".jpg");
+        Mat_<uchar> test_image = imread("./data/test1.jpg",0);
+        Mat test_image_1 = imread("./data/test1.jpg");    
+        Bbox box;
+        box.start_x = 36;
+        box.start_y = 80;
+        box.width =  130;
+        box.height = 147;
+        box.centroid_x = box.start_x + box.width / 2.0;
+        box.centroid_y = box.start_y + box.height / 2.0;
+     
+        // Bbox box = get_bounding_box(target_shapes[index-1]); 
 
         Mat_<double> current_shape = test(regressor,test_image,target_shapes,box,1);
 

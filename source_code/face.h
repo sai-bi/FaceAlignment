@@ -76,7 +76,8 @@ class FernCascade{
                 int pixel_pair_num,
                 vector<Mat_<double> >& normalized_targets,
                 int pixel_pair_in_fern,
-                const Mat_<double>& mean_shape);
+                const Mat_<double>& mean_shape,
+                const vector<Bbox>& target_bounding_box);
         void predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& bounding_box,const Mat_<double>& mean_shape);
         void write(ofstream& fout);
         void read(ifstream& fin);        
@@ -100,6 +101,7 @@ class ShapeRegressor{
         void read(ifstream& fin);
         void write(ofstream& fout);
         void calcuate_normalized_matrix(vector<Mat_<double> >&);
+        vector<Bbox> target_bounding_box_;
     public:
         ShapeRegressor();
         ShapeRegressor(const Mat_<double>& mean_shape,
@@ -109,7 +111,9 @@ class ShapeRegressor{
                 int first_level_num,
                 int second_level_num,
                 int pixel_pair_num,
-                int pixel_pair_in_fern);
+                int pixel_pair_in_fern,
+                const vector<Bbox>& target_bounding_box);
+
         void load(const char* file_name);
         void save(const char* file_name);
         void train();
@@ -133,11 +137,13 @@ void train(const vector<Mat_<uchar> >& input_images,
         int pixel_pair_num,
         int pixel_pair_in_fern,
         int first_level_num,
-        int second_level_num);
+        int second_level_num,
+        const vector<Bbox>& target_bounding_box);
 
 Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vector<Mat_<double> > target_shapes,
         Bbox& bounding_box,
-        int initial_number);
+        int initial_number,
+        const vector<Bbox>& target_bounding_box);
 
 void show_image(const Mat_<uchar>& input_image, const Mat_<double>&  points);
 

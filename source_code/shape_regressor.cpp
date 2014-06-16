@@ -26,7 +26,8 @@ ShapeRegressor::ShapeRegressor(const Mat_<double>& mean_shape,
         int first_level_num,
         int second_level_num,
         int pixel_pair_num,
-        int pixel_pair_in_fern){
+        int pixel_pair_in_fern,
+        const vector<Bbox>& target_bounding_box){
     mean_shape_ = mean_shape;
     images_ = images;
     target_shapes_ = target_shapes;
@@ -40,6 +41,7 @@ ShapeRegressor::ShapeRegressor(const Mat_<double>& mean_shape,
     img_height_ = images_[0].cols;
     img_width_ = images_[0].rows;
     pixel_pair_in_fern_ = pixel_pair_in_fern;
+    target_bounding_box_ = target_bounding_box;
 }
 
 /**
@@ -54,7 +56,7 @@ void ShapeRegressor::train(){
 
         fern_cascades_[i].train(images_,target_shapes_,
                 second_level_num_,current_shapes_,pixel_pair_num_,temp1,
-                pixel_pair_in_fern_, mean_shape_); 
+                pixel_pair_in_fern_, mean_shape_,target_bounding_box_); 
     }   
 }
 
