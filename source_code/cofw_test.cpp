@@ -84,7 +84,7 @@ int main(){
     
     cout<<"Load model..."<<endl;
     ShapeRegressor regressor;
-    regressor.load("./data/model_cofw.txt");
+    regressor.load("./data/model_cofw_1.txt");
     cout<<"Model loaded..."<<endl;
     
     while(true){

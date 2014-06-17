@@ -53,7 +53,7 @@ void ShapeRegressor::train(){
     // get bounding box
     for(int i = 0;i < first_level_num_;i++){
         vector<Mat_<double> > temp1;
-
+        cout<<"Start training fern cascades "<<i<<"..."<<endl;
         fern_cascades_[i].train(images_,target_shapes_,
                 second_level_num_,current_shapes_,pixel_pair_num_,temp1,
                 pixel_pair_in_fern_, mean_shape_,target_bounding_box_); 

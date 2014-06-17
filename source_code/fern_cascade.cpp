@@ -29,7 +29,6 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         int pixel_pair_in_fern,
         const Mat_<double>& mean_shape,
         const vector<Bbox>& target_bounding_box){
-    cout<<"FernCascade train..."<<endl;
 
     second_level_num_ = second_level_num;
 	// coordinates of selected pixels
@@ -41,21 +40,67 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
     int image_width = images[0].cols;
     int image_height = images[0].rows;
 
-    vector<Mat_<double> > normalized_curr_shape; 
+    /* vector<Mat_<double> > normalized_curr_shape;  */
     // get bounding box of target shapes
    
     vector<Mat_<double> > normalized_shapes;
+    /* vector<Mat_<double> > normalized_ground_truth; */
+
+
     normalized_shapes = project_shape(current_shapes,target_bounding_box);
+    /* normalized_ground_truth = project_shape(target_shapes,target_bounding_box); */
+    
+    /*
+    vector<SimilarityTransform> curr_to_mean_shape;
+    vector<SimilarityTransform> ground_to_mean_shape;
+    
+    curr_to_mean_shape = get_similarity_transform(mean_shape,normalized_shapes);
+    ground_to_mean_shape = get_similarity_transform(mean_shape,normalized_ground_truth);
+     
+    vector<Mat_<double> > curr_project_to_mean;
+    vector<Mat_<double> > ground_project_to_mean;
+    
+    for(int i = 0;i < current_shapes.size();i++){
+        Mat_<double> temp = curr_to_mean_shape[i].apply_similarity_transform(normalized_shapes[i]);
+        curr_project_to_mean.push_back(temp.clone());
+
+        temp = ground_to_mean_shape[i].apply_similarity_transform(normalized_ground_truth[i]);
+        ground_to_mean_shape.push_back(temp.clone()); 
+    }
+    */
+
+
     // calculate normalized targets
     normalized_targets = inverse_shape(current_shapes,target_bounding_box);
     normalized_targets = compose_shape(normalized_targets,target_shapes,target_bounding_box); 
     
+    /* 
+    for(int i = 0;i < normalized_targets.size();i++){
+        Mat_<double> rotation;
+        Mat_<double> translation;
+        double scale;
+        translate_scale_rotate(mean_shape,normalized_shapes[i],translation,scale,rotation);
+        transpose(rotation,rotation);
+        normalized_targets[i] = scale * normalized_targets[i] * rotation;
+    } 
+    */
 
+    
+    // normalized_targets.clear();
+    // for(int i = 0;i < curr_project_to_mean.size();i++){
+        // normalized_targets.push_back(ground_project_to_mean[i] - curr_project_to_mean[i]);
+    // }
+     
 
     // generate feature pixel location 
     for(int i = 0;i < pixel_pair_num;i++){
         double x = random_generator.uniform(-1.0,1.0);
         double y = random_generator.uniform(-1.0,1.0);
+
+        if(x*x + y*y > 1){
+            i--;
+            continue;
+        }
         
         // get its nearest landmark
         double min_dist = 1e10;
@@ -68,8 +113,8 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
             } 
         } 
         nearest_keypoint_index(i) = min_index;
-        pixel_coordinates(i,0) = x;
-        pixel_coordinates(i,1) = y;
+        pixel_coordinates(i,0) = x - mean_shape(min_index,0);
+        pixel_coordinates(i,1) = y - mean_shape(min_index,1);
     }
 
     // get feature pixel location for each image
@@ -141,7 +186,16 @@ void FernCascade::train(const vector<Mat_<uchar> >& images,
         primary_fern_[i].train(pixel_density,correlation,pixel_coordinates,nearest_keypoint_index, current_shapes,pixel_pair_in_fern,normalized_targets,
                 prediction); 
     }
-    
+    /*
+    for(int i = 0;i < prediction.size();i++){
+        Mat_<double> rotation;
+        Mat_<double> translation;
+        double scale;
+        translate_scale_rotate(normalized_shapes[i],mean_shape,translation,scale,rotation);
+        transpose(rotation,rotation);
+        prediction[i] = scale * prediction[i] * rotation; 
+    }
+    */ 
     current_shapes = compose_shape(prediction, current_shapes, target_bounding_box); 
     current_shapes = reproject_shape(current_shapes, target_bounding_box);
    
@@ -185,10 +239,11 @@ void FernCascade::predict(const Mat_<uchar>& image, Mat_<double>& shape, Bbox& b
     prediction = Mat::zeros(shape.rows,2,CV_64FC1);
     for(int i = 0;i < second_level_num_;i++){
         primary_fern_[i].predict(image, shape, bounding_box,mean_shape,scale, rotation,prediction);
-        // shape = compose_shape(prediction, shape, bounding_box); 
-        // shape = reproject_shape(shape, bounding_box);
     }
     
+    /* translate_scale_rotate(normalized_shape,mean_shape,translation,scale,rotation); */
+    /* transpose(rotation,rotation); */
+    /* prediction = scale * prediction * rotation; */
     shape = compose_shape(prediction,shape,bounding_box);
     shape = reproject_shape(shape,bounding_box);
 

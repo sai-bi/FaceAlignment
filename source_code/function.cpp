@@ -53,15 +53,6 @@ void train(const vector<Mat_<uchar> >& input_images,
     
     // get current shapes bounding boxes
     vector<Bbox> curr_bounding_box;
-    // vector<Bbox> target_bounding_box;
-
-    // curr_bounding_box = get_bounding_box(augment_current_shapes);
-    // target_bounding_box = get_bounding_box(augment_target_shapes);
-
-    // normalize current_shapes
-    // augment_current_shapes = project_shape(augment_current_shapes,curr_bounding_box);
-    // re-project current shapes into target shapes bounding boxes
-    // augment_current_shapes = reproject_shape(augment_current_shapes,target_bounding_box); 
     
     // get mean_shape
     Mat_<double> mean_shape = get_mean_shape(target_shapes);
@@ -79,7 +70,7 @@ void train(const vector<Mat_<uchar> >& input_images,
             pixel_pair_in_fern,
             augment_target_bounding_box);
     regressor.train();
-    regressor.save("./data/model_cofw.txt");
+    regressor.save("./data/model_cofw_1.txt");
 }
 
 Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vector<Mat_<double> > target_shapes,
@@ -426,3 +417,21 @@ Mat_<double> get_mean_shape(const vector<Mat_<double> >& shapes){
 
     return result;
 }
+
+vector<SimilarityTransform> get_similarity_transform(const Mat_<double>& mean_shape, const vector<Mat_<double> >& shape2){
+    vector<SimilarityTransform> result;
+
+    for(int i = 0;i < shape2.size();i++){
+        double scale;
+        Mat_<double> rotation;
+        Mat_<double> translation;
+        translate_scale_rotate(mean_shape,shape2[i],translation,scale,rotation);
+        SimilarityTransform temp;
+        temp.rotation = rotation;
+        temp.scale = scale;
+        result.push_back(temp);
+    }
+    return result;
+} 
+
+

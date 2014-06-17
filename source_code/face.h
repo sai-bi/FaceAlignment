@@ -36,6 +36,24 @@ class Bbox{
         };
 };
 
+class SimilarityTransform{
+    public:
+        double scale;
+        Mat_<double> rotation;
+        SimilarityTransform(){
+            scale = 1;
+            rotation = Mat::zeros(2,2,CV_64FC1);
+        };
+        Mat_<double> apply_similarity_transform(const Mat_<double>& shape){
+            Mat_<double> result = shape.clone();
+            Mat_<double> temp;
+            transpose(rotation,temp);
+            result = scale * shape * temp;        
+            return result;
+        };
+};
+
+
 class Fern{
     private:
         int pixel_pair_num_in_fern_;
