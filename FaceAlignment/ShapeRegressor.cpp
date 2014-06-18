@@ -23,23 +23,23 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
     training_shapes_ = ground_truth_shapes;
     // data augmentation and multiple initialization 
     vector<Mat_<uchar> > augmented_images;
-    vector<Mat_<BoundingBox> > augmented_bounding_box;
+    vector<BoundingBox> augmented_bounding_box;
     vector<Mat_<double> > augmented_ground_truth_shapes;
-    vecot<Mat_<double> > current_shapes;
+    vector<Mat_<double> > current_shapes;
      
     RNG random_generator(getTickCount());
-    for(int i = 0;i < ground_truth_images.size();i++){
+    for(int i = 0;i < images.size();i++){
         for(int j = 0;j < initial_num;j++){
             int index = 0;
             do{
-                index = random_generator.uniform(0,ground_truth_images.size());
+                index = random_generator.uniform(0,images.size());
             }while(index == i);
             augmented_images.push_back(images[index]);
             augmented_ground_truth_shapes.push_back(ground_truth_shapes[i]);
             augmented_bounding_box.push_back(bounding_box[i]); 
             // 1. Select ground truth shapes of other images as initial shapes
             // 2. Project current shape to bounding box of ground truth shapes 
-            Mat_<double> temp = ground_truth_shape[index];
+            Mat_<double> temp = ground_truth_shapes[index];
             temp = ProjectShape(temp, bounding_box[index]);
             temp = ReProjectShape(temp, bounding_box[i]);
             current_shapes.push_back(temp); 
@@ -47,21 +47,13 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
     }
     
     // get mean shape
-    mean_shape_ = GetMeanShape(ground_truth_shape,bounding_box); 
-    
-    // get normalized targets
-    vector<Mat_<double> > normalized_targets;
-    normalized_targets.resize(current_shapes.size()); 
-    for(int i = 0;i < current_shapes.size();i++){
-        normalized_targets[i] = ProjectShape(current_shapes[i],augmented_bounding_box[i]);
-        normalized_targets[i] = ProjectShape(augmented_ground_truth_shapes[i],augmented_bounding_box[i]) - normalized_targets[i];
-    } 
+    mean_shape_ = GetMeanShape(ground_truth_shapes,bounding_box); 
     
     // train fern cascades
     fern_cascades_.resize(first_level_num);
     vector<Mat_<double> > prediction;
     for(int i = 0;i < first_level_num;i++){
-        prediction = fern_cascades_[i].train(augmented_images,current_shapes,
+        prediction = fern_cascades_[i].Train(augmented_images,current_shapes,
                 augmented_ground_truth_shapes,augmented_bounding_box,mean_shape_,second_level_num,candidate_pixel_num,fern_pixel_num);
         
         // update current shapes 
@@ -76,7 +68,7 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
 
 void ShapeRegressor::Write(ofstream& fout){
     fout<<first_level_num_<<endl;
-    fout<<landmark_num_<<endl;
+    fout<<mean_shape_.rows<<endl;
     for(int i = 0;i < landmark_num_;i++){
         fout<<mean_shape_(i,0)<<" "<<mean_shape_(i,1)<<" "; 
     }
@@ -112,7 +104,7 @@ void ShapeRegressor::Read(ifstream& fin){
 
     for(int i = 0;i < training_num;i++){
         BoundingBox temp;
-        fin>>temp.start_x>>temp.start_y>>temp.width>>temp.height>>temp.centroid_x>>temp.centroid_y>>endl;
+        fin>>temp.start_x>>temp.start_y>>temp.width>>temp.height>>temp.centroid_x>>temp.centroid_y;
         bounding_box_[i] = temp;
         
         Mat_<double> temp1(landmark_num_,2);
@@ -124,7 +116,7 @@ void ShapeRegressor::Read(ifstream& fin){
 
     fern_cascades_.resize(first_level_num_);
     for(int i = 0;i < first_level_num_;i++){
-        fern_cascades_.Read(fin);
+        fern_cascades_[i].Read(fin);
     }
 } 
 
@@ -156,14 +148,14 @@ Mat_<double> ShapeRegressor::Predict(const Mat_<uchar>& image, const BoundingBox
 void ShapeRegressor::Load(string path){
     ifstream fin;
     fin.open(path);
-    this.Read(fin); 
-    this.close();
+    this->Read(fin); 
+    fin.close();
 }
 
 void ShapeRegressor::Save(string path){
     ofstream fout;
     fout.open(path);
-    this.Write(fout);
+    this->Write(fout);
     fout.close();
 }
 

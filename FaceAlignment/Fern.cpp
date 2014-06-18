@@ -12,7 +12,7 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
                                   const vector<Mat_<double> >& regression_targets,
                                   int fern_pixel_num){
     fern_pixel_num_ = fern_pixel_num;
-    landmark_num_ = target_shapes[0].rows;
+    landmark_num_ = regression_targets[0].rows;
     selected_pixel_index_.create(fern_pixel_num,2);
     selected_pixel_locations_.create(fern_pixel_num,4);
     selected_nearest_landmark_index_.create(fern_pixel_num,2);
@@ -21,7 +21,7 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
     // select pixel pairs from candidate pixels 
     RNG random_generator(getTickCount());
     threshold_.create(fern_pixel_num,1);
-    for(int i = 0;i < fern_pixel_num;j++){
+    for(int i = 0;i < fern_pixel_num;i++){
         // get a random direction
         Mat_<double> random_direction(landmark_num_ * 2,1);
         random_generator.fill(random_direction,RNG::UNIFORM,-1.1,1.1);
@@ -81,7 +81,7 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
     
     // determine the bins of each shape
     vector<vector<int> > shapes_in_bin;
-    int bin_num = pow(2.0,fern_pixel_num)
+    int bin_num = pow(2.0,fern_pixel_num);
     shapes_in_bin.resize(bin_num);
     for(int i = 0;i < regression_targets.size();i++){
         int index = 0;
@@ -139,16 +139,16 @@ void Fern::Write(ofstream& fout){
 }
 
 void Fern::Read(ifstream& fin){
-    fin>>fern_pixel_num_>>endl;
-    fin>>landmark_num_>>endl;
+    fin>>fern_pixel_num_;
+    fin>>landmark_num_;
     selected_nearest_landmark_index_.create(fern_pixel_num_,2);
     selected_pixel_locations_.create(fern_pixel_num_,4);
-    threshold_.create(fern_pixel_num,1);
+    threshold_.create(fern_pixel_num_,1);
     for(int i = 0;i < fern_pixel_num_;i++){
-        fout>>selected_nearest_landmark_index_(i,0)>>" ">>selected_nearest_landmark_index_(i,1)>>endl;
-        fout>>selected_pixel_locations_(i,0)>>" ">>selected_pixel_locations_(i,1)>>" "
-            >>selected_pixel_locations_(i,2)>>" ">>selected_pixel_locations_(i,3)>>" ">>endl;
-        fout>>threshold_(i)>>endl;
+        fin>>selected_nearest_landmark_index_(i,0)>>selected_nearest_landmark_index_(i,1);
+        fin>>selected_pixel_locations_(i,0)>>selected_pixel_locations_(i,1)
+            >>selected_pixel_locations_(i,2)>>selected_pixel_locations_(i,3);
+        fin>>threshold_(i);
     }       
      
     int bin_num = pow(2.0,fern_pixel_num_);
@@ -165,7 +165,7 @@ Mat_<double> Fern::Predict(const Mat_<uchar>& image,
                      const Mat_<double>& shape,
                      const Mat_<double>& rotation,
                      const BoundingBox& bounding_box,
-                     int double scale){
+                     double scale){
     int index = 0;
     for(int i = 0;i < fern_pixel_num_;i++){
         int nearest_landmark_index_1 = selected_nearest_landmark_index_(i,0);
@@ -176,8 +176,8 @@ Mat_<double> Fern::Predict(const Mat_<uchar>& image,
         y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height + shape(nearest_landmark_index_1,1);
         double intensity_1 = (int)(image((int)y,(int)x));
 
-        double x = selected_pixel_locations_(i,2);
-        double y = selected_pixel_locations_(i,3);
+        x = selected_pixel_locations_(i,2);
+        y = selected_pixel_locations_(i,3);
         x = scale * (rotation(0,0)*x + rotation(0,1)*y) * bounding_box.width + shape(nearest_landmark_index_2,0);
         y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height + shape(nearest_landmark_index_2,1);
         double intensity_2 = (int)(image((int)y,(int)x));

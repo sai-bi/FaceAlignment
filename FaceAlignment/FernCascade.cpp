@@ -17,8 +17,8 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
     Mat_<int> nearest_landmark_index(candidate_pixel_num,1);
     vector<Mat_<double> > regression_targets;
     RNG random_generator(getTickCount());
-
     second_level_num_ = second_level_num;
+    
     // calculate regression targets 
     regression_targets.resize(current_shapes.size()); 
     for(int i = 0;i < current_shapes.size();i++){
@@ -63,10 +63,10 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
             project_x = scale * project_x * bounding_box[i].width / 2.0;
             project_y = scale * project_y * bounding_box[i].height / 2.0;
             int index = nearest_landmark_index(j);
-            int real_x = project_x + current_shapes(index,0);
-            int real_y = project_y + current_shapes(index,1); 
-            real_x = std::max(0.0,min(real_x,images[i].cols-1.0));
-            real_y = std::max(0.0,min(real_y,images[i].rows-1.0));
+            int real_x = project_x + current_shapes[i](index,0);
+            int real_y = project_y + current_shapes[i](index,1); 
+            real_x = std::max(0.0,std::min((double)real_x,images[i].cols-1.0));
+            real_y = std::max(0.0,std::min((double)real_y,images[i].rows-1.0));
             densities(i,j) = (int)(images[i](real_y,real_x)); 
         }
     }
@@ -84,7 +84,7 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
     } 
     ferns_.resize(second_level_num);
     for(int i = 0;i < second_level_num;i++){
-        vector<Mat_<double> > temp = ferns.train(densities,covariance,candidate_pixel_locations,nearest_landmark_index,regression_targets,fern_pixel_num);     
+        vector<Mat_<double> > temp = ferns_[i].Train(densities,covariance,candidate_pixel_locations,nearest_landmark_index,regression_targets,fern_pixel_num);     
         // update regression targets
         for(int j = 0;j < temp.size();j++){
             prediction[j] = prediction[j] + temp[j];
@@ -115,10 +115,10 @@ Mat_<double> FernCascade::Predict(const Mat_<uchar>& image,
                           const BoundingBox& bounding_box, 
                           const Mat_<double>& mean_shape,
                           const Mat_<double>& shape){   
-    Mat_<double> result = Mat::zeros(shape.rows,2);
+    Mat_<double> result = Mat::zeros(shape.rows,2,CV_64FC1);
     Mat_<double> rotation;
     double scale;
-    SimilarityTransform(ProjectShape(shape,bounding_box),rotation,scale);
+    SimilarityTransform(ProjectShape(shape,bounding_box),mean_shape,rotation,scale);
      
     for(int i = 0;i < second_level_num_;i++){
         result = result + ferns_[i].Predict(image,shape,rotation,bounding_box,scale); 

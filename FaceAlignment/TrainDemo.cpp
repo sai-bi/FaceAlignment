@@ -16,7 +16,6 @@ int main(){
     vector<Mat_<uchar> > images;
     vector<BoundingBox> bbox; 
     
-    // read images
     cout<<"Read images..."<<endl;
     for(int i = 0;i < img_num;i++){
         string image_name = "./../../CRP/rcpr_v2/data/trainingImages/";
@@ -26,11 +25,11 @@ int main(){
     }
     
     vector<Mat_<double> > ground_truth_shapes;
-    vector<Bbox> bounding_box;
+    vector<BoundingBox> bounding_box;
     ifstream fin;
     fin.open("./../../CRP/rcpr_v2/data/boundingbox.txt");
     for(int i = 0;i < img_num;i++){
-        Bbox temp;
+        BoundingBox temp;
         fin>>temp.start_x>>temp.start_y>>temp.width>>temp.height;
         temp.centroid_x = temp.start_x + temp.width/2.0;
         temp.centroid_y = temp.start_y + temp.height/2.0; 

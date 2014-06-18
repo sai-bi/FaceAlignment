@@ -1,5 +1,5 @@
-#ifndef "FACE_ALIGNMENT_H"
-#define "FACE_ALIGNMENT_H"
+#ifndef FACE_ALIGNMENT_H
+#define FACE_ALIGNMENT_H
 
 #include <iostream>
 #include <cstdio>
@@ -14,6 +14,7 @@
 #include <cmath>
 #include <vector>
 #include <fstream>
+#include <numeric>   
 using namespace std;
 using namespace cv;
 
@@ -31,34 +32,34 @@ class BoundingBox{
             width = 0;
             height = 0;
             centroid_x = 0;
-            centroid_y = 0
+            centroid_y = 0;
         }; 
 };
 
-class ShapeRegressor{
+
+class Fern{
+    private:
+        int fern_pixel_num_;
+        int landmark_num_;
+        Mat_<int> selected_nearest_landmark_index_;
+        Mat_<double> threshold_;
+        Mat_<double> selected_pixel_index_;
+        Mat_<double> selected_pixel_locations_;
+        vector<Mat_<double> > bin_output_;
     public:
-        ShapeRegressor(); 
-        void Train(const vector<Mat_<uchar> >& images, 
-                   const vector<Mat_<double> >& ground_truth_shapes,
-                   const vector<BoundingBox>& bounding_box,
-                   int first_level_num, int second_level_num,
-                   int candidate_pixel_num, int fern_pixel_num,
-                   int initial_num);
-        Mat_<double> Predict(const Mat_<uchar>& image, const BoundingBox& bounding_box, int initial_num);
+        vector<Mat_<double> > Train(const Mat_<double>& candidate_pixel_intensity, 
+                                    const Mat_<double>& covariance,
+                                    const Mat_<double>& candidate_pixel_locations,
+                                    const Mat_<int>& nearest_landmark_index,
+                                    const vector<Mat_<double> >& regression_targets,
+                                    int fern_pixel_num);
+        Mat_<double> Predict(const Mat_<uchar>& image,
+                             const Mat_<double>& shape,
+                             const Mat_<double>& rotation,
+                             const BoundingBox& bounding_box,
+                             double scale);
         void Read(ifstream& fin);
         void Write(ofstream& fout);
-        void Load(string path);
-        void Save(string path);
-    private:
-        int first_level_num_;
-        int second_level_num_;
-        int candidate_pixel_num_;
-        int fern_pixel_num_;
-        int initial_num_;
-        vector<FernCascade> fern_cascades_;
-        Mat_<double> mean_shape_;
-        vector<Mat_<double> > training_shapes_;
-        vector<BoundingBox> bounding_box_;
 };
 
 class FernCascade{
@@ -82,30 +83,28 @@ class FernCascade{
         int second_level_num_;
 };
 
-class Fern{
-    private:
-        int fern_pixel_num_;
-        int landmark_num_;
-        Mat_<int> selected_nearest_landmark_index_;
-        Mat_<double> threshold_;
-        Mat_<double> selected_pixel_index_;
-        Mat_<double> selected_pixel_locations_;
-        vector<Mat_<double> > bin_output_;
+class ShapeRegressor{
     public:
-        vector<Mat_<double> > Train(const Mat_<double>& candidate_pixel_intensity, 
-                                    const Mat_<double>& covariance,
-                                    const Mat_<double>& candidate_pixel_locations,
-                                    const Mat_<double>& target_shapes,
-                                    int fern_pixel_num);
-        Mat_<double> Predict(const Mat_<uchar>& image,
-                             const Mat_<double>& shape,
-                             const Mat_<double>& rotation,
-                             const BoundingBox& bounding_box,
-                             double scale);
+        ShapeRegressor(); 
+        void Train(const vector<Mat_<uchar> >& images, 
+                   const vector<Mat_<double> >& ground_truth_shapes,
+                   const vector<BoundingBox>& bounding_box,
+                   int first_level_num, int second_level_num,
+                   int candidate_pixel_num, int fern_pixel_num,
+                   int initial_num);
+        Mat_<double> Predict(const Mat_<uchar>& image, const BoundingBox& bounding_box, int initial_num);
         void Read(ifstream& fin);
         void Write(ofstream& fout);
+        void Load(string path);
+        void Save(string path);
+    private:
+        int first_level_num_;
+        int landmark_num_;
+        vector<FernCascade> fern_cascades_;
+        Mat_<double> mean_shape_;
+        vector<Mat_<double> > training_shapes_;
+        vector<BoundingBox> bounding_box_;
 };
-
 
 Mat_<double> GetMeanShape(const vector<Mat_<double> >& shapes,
                           const vector<BoundingBox>& bounding_box);
