@@ -50,6 +50,7 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
     bounding_box_ = bounding_box;
     training_shapes_ = ground_truth_shapes;
     first_level_num_ = first_level_num;
+    landmark_num_ = ground_truth_shapes[0].rows; 
     // data augmentation and multiple initialization 
     vector<Mat_<uchar> > augmented_images;
     vector<BoundingBox> augmented_bounding_box;
@@ -123,12 +124,13 @@ void ShapeRegressor::Write(ofstream& fout){
 void ShapeRegressor::Read(ifstream& fin){
     fin>>first_level_num_;
     fin>>landmark_num_;
+    mean_shape_ = Mat::zeros(landmark_num_,2,CV_64FC1);
     for(int i = 0;i < landmark_num_;i++){
         fin>>mean_shape_(i,0)>>mean_shape_(i,1);
     }
     
     int training_num;
-    cin>>training_num;
+    fin>>training_num;
     training_shapes_.resize(training_num);
     bounding_box_.resize(training_num);
 
@@ -141,7 +143,7 @@ void ShapeRegressor::Read(ifstream& fin){
         for(int j = 0;j < landmark_num_;j++){
             fin>>temp1(j,0)>>temp1(j,1);
         }
-        training_shapes_.push_back(temp1); 
+        training_shapes_[i] = temp1; 
     }
 
     fern_cascades_.resize(first_level_num_);
@@ -159,10 +161,9 @@ Mat_<double> ShapeRegressor::Predict(const Mat_<uchar>& image, const BoundingBox
         int index = random_generator.uniform(0,training_shapes_.size());
         Mat_<double> current_shape = training_shapes_[index];
         BoundingBox current_bounding_box = bounding_box_[index];
-        
         current_shape = ProjectShape(current_shape,current_bounding_box);
         current_shape = ReProjectShape(current_shape,bounding_box);
-        
+         
         for(int j = 0;j < first_level_num_;j++){
             Mat_<double> prediction = fern_cascades_[j].Predict(image,bounding_box,mean_shape_,current_shape);
             // update current shape
