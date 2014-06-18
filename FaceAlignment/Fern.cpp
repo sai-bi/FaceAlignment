@@ -27,7 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "FaceAlignment.h"
 
-vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity, 
+vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel_intensity, 
                                   const Mat_<double>& covariance,
                                   const Mat_<double>& candidate_pixel_locations,
                                   const Mat_<int>& nearest_landmark_index,
@@ -54,8 +54,8 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
         Mat_<double> random_direction(landmark_num_ * 2,1);
         random_generator.fill(random_direction,RNG::UNIFORM,-1.1,1.1);
         normalize(random_direction,random_direction);
-        Mat_<double> projection_result(regression_targets.size(),1);
-        
+        // Mat_<double> projection_result(regression_targets.size(),1);
+        vector<double> projection_result; 
         // project regression targets along the random direction 
         for(int j = 0;j < regression_targets.size();j++){
             double temp = 0;
@@ -63,13 +63,12 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
                 temp = temp + regression_targets[j](k,0) * random_direction(2*k) 
                             + regression_targets[j](k,1) * random_direction(2*k+1); 
             }
-            projection_result(j) = temp;
+            projection_result.push_back(temp);
         } 
          
         Mat_<double> covariance_projection_density(candidate_pixel_num,1);
         for(int j = 0;j < candidate_pixel_num;j++){
-            Mat_<double> temp = candidate_pixel_intensity(Range::all(),Range(j,j+1));
-            covariance_projection_density(j) = calculate_covariance(projection_result,temp);
+            covariance_projection_density(j) = calculate_covariance(projection_result,candidate_pixel_intensity[j]);
         }
         
         // find max correlation
@@ -104,11 +103,13 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
         selected_nearest_landmark_index_(i,1) = nearest_landmark_index(max_pixel_index_2); 
 
         // get threshold for this pair
-        Mat_<double> density_1 = candidate_pixel_intensity(Range::all(), Range(max_pixel_index_1,max_pixel_index_1+1));
-        Mat_<double> density_2 = candidate_pixel_intensity(Range::all(), Range(max_pixel_index_2,max_pixel_index_2+1));
-        density_1 = cv::abs(density_1 - density_2);
-        double max_diff;
-        cv::max(density_1,max_diff);
+        double max_diff = -1;
+        for(int j = 0;j < candidate_pixel_intensity[max_pixel_index_1].size();j++){
+            double temp = candidate_pixel_intensity[max_pixel_index_1][j] - candidate_pixel_intensity[max_pixel_index_2][j];
+            if(abs(temp) > max_diff){
+                max_diff = abs(temp);
+            }
+        } 
         threshold_(i) = random_generator.uniform(-0.2 * max_diff, 0.2 * max_diff);     
     }
     
@@ -119,8 +120,8 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
     for(int i = 0;i < regression_targets.size();i++){
         int index = 0;
         for(int j = 0;j < fern_pixel_num;j++){
-            double density_1 = candidate_pixel_intensity(i,selected_pixel_index_(j,0));
-            double density_2 = candidate_pixel_intensity(i,selected_pixel_index_(j,1));
+            double density_1 = candidate_pixel_intensity[selected_pixel_index_(j,0)][i];
+            double density_2 = candidate_pixel_intensity[selected_pixel_index_(j,1)][i];
             if(density_1 - density_2 >= threshold_(j)){
                 index = index + pow(2.0,j);
             } 

@@ -71,11 +71,11 @@ class Fern{
         int landmark_num_;
         Mat_<int> selected_nearest_landmark_index_;
         Mat_<double> threshold_;
-        Mat_<double> selected_pixel_index_;
+        Mat_<int> selected_pixel_index_;
         Mat_<double> selected_pixel_locations_;
         vector<Mat_<double> > bin_output_;
     public:
-        vector<Mat_<double> > Train(const Mat_<double>& candidate_pixel_intensity, 
+        vector<Mat_<double> > Train(const vector<vector<double> >& candidate_pixel_intensity, 
                                     const Mat_<double>& covariance,
                                     const Mat_<double>& candidate_pixel_locations,
                                     const Mat_<int>& nearest_landmark_index,
@@ -140,5 +140,7 @@ Mat_<double> ProjectShape(const Mat_<double>& shape, const BoundingBox& bounding
 Mat_<double> ReProjectShape(const Mat_<double>& shape, const BoundingBox& bounding_box);
 void SimilarityTransform(const Mat_<double>& shape1, const Mat_<double>& shape2, 
                          Mat_<double>& rotation,double scale);
-double calculate_covariance(const Mat_<double>& v_1, const Mat_<double>& v_2);
+// double calculate_covariance(const Mat_<double>& v_1, const Mat_<double>& v_2);
+double calculate_covariance(const vector<double>& v_1, 
+                            const vector<double>& v_2);
 #endif

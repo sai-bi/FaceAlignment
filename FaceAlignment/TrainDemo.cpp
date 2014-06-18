@@ -34,7 +34,7 @@ int main(){
     int first_level_num = 10;
     int second_level_num = 500; 
     int landmark_num = 29;
-    int initial_number = 1;
+    int initial_number = 20;
     vector<Mat_<uchar> > images;
     vector<BoundingBox> bbox; 
     

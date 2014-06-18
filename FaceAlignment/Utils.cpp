@@ -117,24 +117,25 @@ void SimilarityTransform(const Mat_<double>& shape1, const Mat_<double>& shape2,
     rotation(1,1) = cos_theta;
 }
 
-double calculate_covariance(const Mat_<double>& v_1, const Mat_<double>& v_2){
+double calculate_covariance(const vector<double>& v_1, 
+                            const vector<double>& v_2){
+    assert(v_1.size() == v_2.size());
+    assert(v_1.size() != 0);
     double sum_1 = 0;
     double sum_2 = 0;
     double exp_1 = 0;
     double exp_2 = 0;
     double exp_3 = 0;
-    for(int i = 0;i < v_1.rows;i++){
-        sum_1 += v_1(i);
-        sum_2 += v_2(i);
+    for(int i = 0;i < v_1.size();i++){
+        sum_1 += v_1[i];
+        sum_2 += v_2[i];
     }
-    exp_1 = sum_1 / v_1.rows;
-    exp_2 = sum_2 / v_2.rows;
-    for(int i = 0;i < v_1.rows;i++){
-        exp_3 = exp_3 + (v_1(i) - exp_1) * (v_2(i) - exp_2);
+    exp_1 = sum_1 / v_1.size();
+    exp_2 = sum_2 / v_2.size();
+    for(int i = 0;i < v_1.size();i++){
+        exp_3 = exp_3 + (v_1[i] - exp_1) * (v_2[i] - exp_2);
     }
-    return exp_3 / v_1.rows;
+    return exp_3 / v_1.size();
 }
-
-
 
 

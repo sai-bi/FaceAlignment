@@ -73,7 +73,9 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
 
     // get densities of candidate pixels for each image
     // for densities: each row is the pixel densities at each candidate pixels for an image 
-    Mat_<double> densities(images.size(), candidate_pixel_num);
+    // Mat_<double> densities(images.size(), candidate_pixel_num);
+    vector<vector<double> > densities;
+    densities.resize(candidate_pixel_num);
     for(int i = 0;i < images.size();i++){
         Mat_<double> rotation;
         double scale;
@@ -89,16 +91,22 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
             int real_y = project_y + current_shapes[i](index,1); 
             real_x = std::max(0.0,std::min((double)real_x,images[i].cols-1.0));
             real_y = std::max(0.0,std::min((double)real_y,images[i].rows-1.0));
-            densities(i,j) = (int)(images[i](real_y,real_x)); 
+            densities[j].push_back((int)images[i](real_y,real_x));
         }
     }
         
     // calculate the covariance between densities at each candidate pixels 
-    // calcCovarMatrix: calculate covariance matrix between coloumns of densities 
     Mat_<double> covariance(candidate_pixel_num,candidate_pixel_num);
     Mat_<double> mean;
-    calcCovarMatrix(densities,covariance,mean,CV_COVAR_COLS,CV_64FC1);
-    
+    for(int i = 0;i < candidate_pixel_num;i++){
+        for(int j = i;j< candidate_pixel_num;j++){
+            double correlation_result = calculate_covariance(densities[i],densities[j]);
+            covariance(i,j) = correlation_result;
+            covariance(j,i) = correlation_result;
+        }
+    } 
+
+
     // train ferns
     vector<Mat_<double> > prediction;
     prediction.resize(regression_targets.size());
