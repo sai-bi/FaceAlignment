@@ -1,26 +1,55 @@
-/**
- * @author 
- * @version 2014/06/17
- */
+/*
+Author: Bi Sai 
+Date: 2014/06/18
+This program is a reimplementation of algorithms in "Face Alignment by Explicit 
+Shape Regression" by Cao et al.
+If you find any bugs, please email me: soundsilencebisai-at-gmail-dot-com
+
+Copyright (c) 2014 Bi Sai 
+The MIT License (MIT)
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 #include "FaceAlignment.h"
 
 ShapeRegressor::ShapeRegressor(){
     first_level_num_ = 0;
-    second_level_num_ = 0;
-    candidate_pixel_num_ = 0;
-    fern_pixel_num_ = 0;
-    initial_num_ = 0;
 }
 
-
+/**
+ * @param images gray scale images
+ * @param ground_truth_shapes a vector of N*2 matrix, where N is the number of landmarks
+ * @param bounding_box BoundingBox of faces
+ * @param first_level_num number of first level regressors
+ * @param second_level_num number of second level regressors
+ * @param candidate_pixel_num number of pixels to be selected as features
+ * @param fern_pixel_num number of pixel pairs in a fern
+ * @param initial_num number of initial shapes for each input image
+ */
 void ShapeRegressor::Train(const vector<Mat_<uchar> >& images, 
                    const vector<Mat_<double> >& ground_truth_shapes,
                    const vector<BoundingBox>& bounding_box,
                    int first_level_num, int second_level_num,
                    int candidate_pixel_num, int fern_pixel_num,
                    int initial_num){
+    cout<<"Start training..."<<endl;
     bounding_box_ = bounding_box;
     training_shapes_ = ground_truth_shapes;
+    first_level_num_ = first_level_num;
     // data augmentation and multiple initialization 
     vector<Mat_<uchar> > augmented_images;
     vector<BoundingBox> augmented_bounding_box;
@@ -34,7 +63,7 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
             do{
                 index = random_generator.uniform(0,images.size());
             }while(index == i);
-            augmented_images.push_back(images[index]);
+            augmented_images.push_back(images[i]);
             augmented_ground_truth_shapes.push_back(ground_truth_shapes[i]);
             augmented_bounding_box.push_back(bounding_box[i]); 
             // 1. Select ground truth shapes of other images as initial shapes
@@ -46,13 +75,14 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
         } 
     }
     
-    // get mean shape
+    // get mean shape from training shapes
     mean_shape_ = GetMeanShape(ground_truth_shapes,bounding_box); 
     
     // train fern cascades
     fern_cascades_.resize(first_level_num);
     vector<Mat_<double> > prediction;
     for(int i = 0;i < first_level_num;i++){
+        cout<<"Training fern cascades: "<<i+1<<" out of "<<first_level_num<<endl;
         prediction = fern_cascades_[i].Train(augmented_images,current_shapes,
                 augmented_ground_truth_shapes,augmented_bounding_box,mean_shape_,second_level_num,candidate_pixel_num,fern_pixel_num);
         
@@ -146,13 +176,16 @@ Mat_<double> ShapeRegressor::Predict(const Mat_<uchar>& image, const BoundingBox
 }
 
 void ShapeRegressor::Load(string path){
+    cout<<"Loading model..."<<endl;
     ifstream fin;
     fin.open(path);
     this->Read(fin); 
     fin.close();
+    cout<<"Model loaded successfully..."<<endl;
 }
 
 void ShapeRegressor::Save(string path){
+    cout<<"Saving model..."<<endl;
     ofstream fout;
     fout.open(path);
     this->Write(fout);

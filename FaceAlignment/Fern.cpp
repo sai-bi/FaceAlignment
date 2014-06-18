@@ -1,7 +1,29 @@
-/**
- * @author 
- * @version 2014/06/18
- */
+/*
+Author: Bi Sai 
+Date: 2014/06/18
+This program is a reimplementation of algorithms in "Face Alignment by Explicit 
+Shape Regression" by Cao et al.
+If you find any bugs, please email me: soundsilencebisai-at-gmail-dot-com
+
+Copyright (c) 2014 Bi Sai 
+The MIT License (MIT)
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 #include "FaceAlignment.h"
 
@@ -11,6 +33,9 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
                                   const Mat_<int>& nearest_landmark_index,
                                   const vector<Mat_<double> >& regression_targets,
                                   int fern_pixel_num){
+    // selected_pixel_index_: fern_pixel_num*2 matrix, the index of selected pixels pairs in fern
+    // selected_pixel_locations_: fern_pixel_num*4 matrix, the locations of selected pixel pairs
+    //                            stored in the format (x_1,y_1,x_2,y_2) for each row 
     fern_pixel_num_ = fern_pixel_num;
     landmark_num_ = regression_targets[0].rows;
     selected_pixel_index_.create(fern_pixel_num,2);
@@ -18,7 +43,10 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
     selected_nearest_landmark_index_.create(fern_pixel_num,2);
     int candidate_pixel_num = candidate_pixel_locations.rows;
 
-    // select pixel pairs from candidate pixels 
+    // select pixel pairs from candidate pixels, this selection is based on the correlation between pixel 
+    // densities and regression targets
+    // for details, please refer to "Face Alignment by Explicit Shape Regression" 
+    // threshold_: thresholds for each pair of pixels in fern 
     RNG random_generator(getTickCount());
     threshold_.create(fern_pixel_num,1);
     for(int i = 0;i < fern_pixel_num;i++){
@@ -28,8 +56,14 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
         normalize(random_direction,random_direction);
         Mat_<double> projection_result(regression_targets.size(),1);
         
+        // project regression targets along the random direction 
         for(int j = 0;j < regression_targets.size();j++){
-            projection_result(j) = random_direction.dot(regression_targets[j]); 
+            double temp = 0;
+            for(int k = 0;k < regression_targets[j].rows;k++){
+                temp = temp + regression_targets[j](k,0) * random_direction(2*k) 
+                            + regression_targets[j](k,1) * random_direction(2*k+1); 
+            }
+            projection_result(j) = temp;
         } 
          
         Mat_<double> covariance_projection_density(candidate_pixel_num,1);
@@ -51,9 +85,8 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
                 if(temp1 < 1e-10){
                     continue;
                 }
-
                 double temp = (covariance_projection_density(j) - covariance_projection_density(k))
-                    / temp1;
+                    / sqrt(temp1);
                 if(abs(temp) > max_correlation){
                     max_correlation = temp;
                     max_pixel_index_1 = j;
@@ -100,7 +133,7 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
     prediction.resize(regression_targets.size());
     bin_output_.resize(bin_num);
     for(int i = 0;i < bin_num;i++){
-        Mat_<double> temp(landmark_num_,2);
+        Mat_<double> temp = Mat::zeros(landmark_num_,2, CV_64FC1);
         int bin_size = shapes_in_bin[i].size();
         for(int j = 0;j < bin_size;j++){
             int index = shapes_in_bin[i][j];

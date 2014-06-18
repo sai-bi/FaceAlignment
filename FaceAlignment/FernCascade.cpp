@@ -1,10 +1,31 @@
-/**
- * @author 
- * @version 2014/06/17
- */
+/*
+Author: Bi Sai 
+Date: 2014/06/18
+This program is a reimplementation of algorithms in "Face Alignment by Explicit 
+Shape Regression" by Cao et al.
+If you find any bugs, please email me: soundsilencebisai-at-gmail-dot-com
+
+Copyright (c) 2014 Bi Sai 
+The MIT License (MIT)
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 #include "FaceAlignment.h"
-
 vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
                                     const vector<Mat_<double> >& current_shapes,
                                     const vector<Mat_<double> >& ground_truth_shapes,
@@ -19,14 +40,15 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
     RNG random_generator(getTickCount());
     second_level_num_ = second_level_num;
     
-    // calculate regression targets 
+    // calculate regression targets: the difference between ground truth shapes and current shapes
+    // candidate_pixel_locations: the locations of candidate pixels, indexed relative to its nearest landmark on mean shape 
     regression_targets.resize(current_shapes.size()); 
     for(int i = 0;i < current_shapes.size();i++){
         regression_targets[i] = ProjectShape(ground_truth_shapes[i],bounding_box[i]) 
                                 - ProjectShape(current_shapes[i],bounding_box[i]);
     }
     
-    // get candidate pixel locations
+    // get candidate pixel locations, please refer to 'shape-indexed features'
     for(int i = 0;i < candidate_pixel_num;i++){
         double x = random_generator.uniform(-1.0,1.0);
         double y = random_generator.uniform(-1.0,1.0);
@@ -34,7 +56,6 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
             i--;
             continue;
         }
-
         // find nearest landmark index
         double min_dist = 1e10;
         double min_index = 0;
@@ -50,7 +71,8 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
         nearest_landmark_index(i) = min_index;   
     }
 
-    // get densities of candidate pixels for each image 
+    // get densities of candidate pixels for each image
+    // for densities: each row is the pixel densities at each candidate pixels for an image 
     Mat_<double> densities(images.size(), candidate_pixel_num);
     for(int i = 0;i < images.size();i++){
         Mat_<double> rotation;
@@ -71,19 +93,21 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
         }
     }
         
-    // calculate the covariance between pixels
+    // calculate the covariance between densities at each candidate pixels 
+    // calcCovarMatrix: calculate covariance matrix between coloumns of densities 
     Mat_<double> covariance(candidate_pixel_num,candidate_pixel_num);
     Mat_<double> mean;
     calcCovarMatrix(densities,covariance,mean,CV_COVAR_COLS,CV_64FC1);
     
     // train ferns
     vector<Mat_<double> > prediction;
-    prediction.resize(second_level_num);
-    for(int i = 0;i < second_level_num;i++){
+    prediction.resize(regression_targets.size());
+    for(int i = 0;i < regression_targets.size();i++){
         prediction[i] = Mat::zeros(mean_shape.rows,2,CV_64FC1); 
     } 
     ferns_.resize(second_level_num);
     for(int i = 0;i < second_level_num;i++){
+        cout<<"Training ferns: "<<i+1<<" out of "<<second_level_num<<endl;
         vector<Mat_<double> > temp = ferns_[i].Train(densities,covariance,candidate_pixel_locations,nearest_landmark_index,regression_targets,fern_pixel_num);     
         // update regression targets
         for(int j = 0;j < temp.size();j++){

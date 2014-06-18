@@ -1,7 +1,29 @@
-/**
- * @author 
- * @version 2014/06/18
- */
+/*
+Author: Bi Sai 
+Date: 2014/06/18
+This program is a reimplementation of algorithms in "Face Alignment by Explicit 
+Shape Regression" by Cao et al.
+If you find any bugs, please email me: soundsilencebisai-at-gmail-dot-com
+
+Copyright (c) 2014 Bi Sai 
+The MIT License (MIT)
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 #include "FaceAlignment.h"
 
@@ -12,7 +34,7 @@ int main(){
     int first_level_num = 10;
     int second_level_num = 500; 
     int landmark_num = 29;
-    int initial_number = 20;
+    int initial_number = 1;
     vector<Mat_<uchar> > images;
     vector<BoundingBox> bbox; 
     
