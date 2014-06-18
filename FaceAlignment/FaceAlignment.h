@@ -68,7 +68,7 @@ class Fern{
     private:
         int fern_pixel_num_;
         int landmark_num_;
-        Mat_<int> nearest_landmark_index_;
+        Mat_<int> selected_nearest_landmark_index_;
         Mat_<double> threshold_;
         Mat_<double> selected_pixel_index_;
         Mat_<double> selected_pixel_locations_;

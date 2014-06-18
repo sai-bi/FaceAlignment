@@ -84,7 +84,7 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
     } 
     ferns_.resize(second_level_num);
     for(int i = 0;i < second_level_num;i++){
-        vector<Mat_<double> > temp = ferns.train(densities,covariance,candidate_pixel_locations,regression_targets,fern_pixel_num);     
+        vector<Mat_<double> > temp = ferns.train(densities,covariance,candidate_pixel_locations,nearest_landmark_index,regression_targets,fern_pixel_num);     
         // update regression targets
         for(int j = 0;j < temp.size();j++){
             prediction[j] = prediction[j] + temp[j];
@@ -94,5 +94,21 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
     
     return prediction;    
 }
+
+void FernCascade::Read(ifstream& fin){
+    fin>>second_level_num_; 
+    ferns_.resize(second_level_num_);
+    for(int i = 0;i < second_level_num_;i++){
+        ferns_[i].Read(fin);
+    }
+}
+
+void FernCascade::Write(ofstream& fout){
+    fout<<second_level_num_<<endl;
+    for(int i = 0;i < second_level_num_;i++){
+        ferns_[i].Write(fout);
+    }   
+}
+
 
 

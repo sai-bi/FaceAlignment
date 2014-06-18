@@ -72,5 +72,30 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
 }
 
 
+void ShapeRegressor::Write(ofstream& fout){
+    fout<<first_level_num_<<endl;
+    fout<<landmark_num_<<endl;
+    for(int i = 0;i < landmark_num_;i++){
+        fout<<mean_shape_(i,0)<<" "<<mean_shape_(i,1)<<" "; 
+    }
+    fout<<endl;
+    
+    for(int i = 0;i < first_level_num_;i++){
+        fern_cascades_[i].Write(fout);
+    } 
+}
+
+void ShapeRegressor::Read(ifstream& fin){
+    fin>>first_level_num_;
+    fin>>landmark_num_;
+    for(int i = 0;i < landmark_num_;i++){
+        fin>>mean_shape_(i,0)>>mean_shape_(i,1);
+    }
+    fern_cascades_.resize(first_level_num_);
+    for(int i = 0;i < first_level_num_;i++){
+        fern_cascades_.Read(fin);
+    }
+} 
+
 
 

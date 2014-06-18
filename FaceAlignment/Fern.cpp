@@ -8,12 +8,14 @@
 vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity, 
                                   const Mat_<double>& covariance,
                                   const Mat_<double>& candidate_pixel_locations,
+                                  const Mat_<int>& nearest_landmark_index,
                                   const vector<Mat_<double> >& regression_targets,
                                   int fern_pixel_num){
     fern_pixel_num_ = fern_pixel_num;
     landmark_num_ = target_shapes[0].rows;
     selected_pixel_index_.create(fern_pixel_num,2);
     selected_pixel_locations_.create(fern_pixel_num,4);
+    selected_nearest_landmark_index_.create(fern_pixel_num,2);
     int candidate_pixel_num = candidate_pixel_locations.rows;
 
     // select pixel pairs from candidate pixels 
@@ -65,6 +67,8 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
         selected_pixel_locations_(i,1) = candidate_pixel_locations(max_pixel_index_1,1);
         selected_pixel_locations_(i,2) = candidate_pixel_locations(max_pixel_index_2,0);
         selected_pixel_locations_(i,3) = candidate_pixel_locations(max_pixel_index_2,1);
+        selected_nearest_landmark_index_(i,0) = nearest_landmark_index(max_pixel_index_1); 
+        selected_nearest_landmark_index_(i,1) = nearest_landmark_index(max_pixel_index_2); 
 
         // get threshold for this pair
         Mat_<double> density_1 = candidate_pixel_intensity(Range::all(), Range(max_pixel_index_1,max_pixel_index_1+1));
@@ -115,6 +119,49 @@ vector<Mat_<double> > Fern::Train(const Mat_<double>& candidate_pixel_intensity,
     }
     return prediction;
 }
+
+
+void Fern::Write(ofstream& fout){
+    fout<<fern_pixel_num_<<endl;
+    fout<<landmark_num_<<endl;
+    for(int i = 0;i < fern_pixel_num_;i++){
+        fout<<selected_nearest_landmark_index_(i,0)<<" "<<selected_nearest_landmark_index_(i,1)<<endl;
+        fout<<selected_pixel_locations_(i,0)<<" "<<selected_pixel_locations_(i,1)<<" "
+            <<selected_pixel_locations_(i,2)<<" "<<selected_pixel_locations_(i,3)<<" "<<endl;
+        fout<<threshold_(i)<<endl;
+    }        
+    for(int i = 0;i < bin_output_.size();i++){
+        for(int j = 0;j < bin_output_[i].rows;j++){
+            fout<<bin_output_[i](j,0)<<" "<<bin_output_[i](j,1)<<" ";
+        }
+        fout<<endl;
+    } 
+}
+
+void Fern::Read(ifstream& fin){
+    fin>>fern_pixel_num_>>endl;
+    fin>>landmark_num_>>endl;
+    selected_nearest_landmark_index_.create(fern_pixel_num_,2);
+    selected_pixel_locations_.create(fern_pixel_num_,4);
+    threshold_.create(fern_pixel_num,1);
+    for(int i = 0;i < fern_pixel_num_;i++){
+        fout>>selected_nearest_landmark_index_(i,0)>>" ">>selected_nearest_landmark_index_(i,1)>>endl;
+        fout>>selected_pixel_locations_(i,0)>>" ">>selected_pixel_locations_(i,1)>>" "
+            >>selected_pixel_locations_(i,2)>>" ">>selected_pixel_locations_(i,3)>>" ">>endl;
+        fout>>threshold_(i)>>endl;
+    }       
+     
+    int bin_num = pow(2.0,fern_pixel_num_);
+    for(int i = 0;i < bin_num;i++){
+        Mat_<double> temp(landmark_num_,2);
+        for(int j = 0;j < landmark_num_;j++){
+            fin>>temp(j,0)>>temp(j,1);
+        }
+        bin_output_.push_back(temp);
+    }
+}
+
+
 
 
 
