@@ -70,7 +70,9 @@ class Fern{
         int landmark_num_;
         Mat_<int> nearest_landmark_index_;
         Mat_<double> threshold_;
-        Mat_<double> selected_pixel_location_;
+        Mat_<double> selected_pixel_index_;
+        Mat_<double> selected_pixel_locations_;
+        vector<Mat_<double> > bin_output_;
     public:
         vector<Mat_<double> > Train(const Mat_<double>& candidate_pixel_intensity, 
                                     const Mat_<double>& covariance,
