@@ -1,6 +1,21 @@
 #ifndef "FACE_ALIGNMENT_H"
 #define "FACE_ALIGNMENT_H"
 
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+#include "cv.h"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include <ctime>
+#include <string>
+#include <limits>
+#include <algorithm>
+#include <cmath>
+#include <vector>
+#include <fstream>
+using namespace std;
+using namespace cv;
 
 class BoundingBox{
     public:
@@ -96,5 +111,7 @@ Mat_<double> GetMeanShape(const vector<Mat_<double> >& shapes,
                           const vector<BoundingBox>& bounding_box);
 Mat_<double> ProjectShape(const Mat_<double>& shape, const BoundingBox& bounding_box);
 Mat_<double> ReProjectShape(const Mat_<double>& shape, const BoundingBox& bounding_box);
-
+void SimilarityTransform(const Mat_<double>& shape1, const Mat_<double>& shape2, 
+                         Mat_<double>& rotation,double scale);
+double calculate_covariance(const Mat_<double>& v_1, const Mat_<double>& v_2);
 #endif

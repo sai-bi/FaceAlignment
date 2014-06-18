@@ -153,4 +153,18 @@ Mat_<double> ShapeRegressor::Predict(const Mat_<uchar>& image, const BoundingBox
     return 1.0 / initial_num * result;
 }
 
+void ShapeRegressor::Load(string path){
+    ifstream fin;
+    fin.open(path);
+    this.Read(fin); 
+    this.close();
+}
+
+void ShapeRegressor::Save(string path){
+    ofstream fout;
+    fout.open(path);
+    this.Write(fout);
+    fout.close();
+}
+
 
