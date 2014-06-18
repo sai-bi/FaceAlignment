@@ -29,7 +29,7 @@ class ShapeRegressor{
                    int first_level_num, int second_level_num,
                    int candidate_pixel_num, int fern_pixel_num,
                    int initial_num);
-        Mat_<double> Test(const Mat_<uchar>& image, const BoundingBox& bounding_box, int initial_num);
+        Mat_<double> Predict(const Mat_<uchar>& image, const BoundingBox& bounding_box, int initial_num);
         void Read(ifstream& fin);
         void Write(ofstream& fout);
         void Load(string path);
@@ -42,6 +42,8 @@ class ShapeRegressor{
         int initial_num_;
         vector<FernCascade> fern_cascades_;
         Mat_<double> mean_shape_;
+        vector<Mat_<double> > training_shapes_;
+        vector<BoundingBox> bounding_box_;
 };
 
 class FernCascade{
@@ -54,9 +56,10 @@ class FernCascade{
                                     int second_level_num,
                                     int candidate_pixel_num,
                                     int fern_pixel_num);  
-        Mat_<double> Test(const Mat_<uchar>& image, 
+        Mat_<double> Predict(const Mat_<uchar>& image, 
                           const BoundingBox& bounding_box, 
-                          const Mat_<double>& mean_shape);
+                          const Mat_<double>& mean_shape,
+                          const Mat_<double>& shape);
         void Read(ifstream& fin);
         void Write(ofstream& fout);
     private:
@@ -79,11 +82,11 @@ class Fern{
                                     const Mat_<double>& candidate_pixel_locations,
                                     const Mat_<double>& target_shapes,
                                     int fern_pixel_num);
-        Mat_<double> Test(const Mat_<uchar>& image,
-                          const Mat_<double>& shape,
-                          const Mat_<double>& mean_shape,
-                          const Mat_<double>& rotation,
-                          int double scale);
+        Mat_<double> Predict(const Mat_<uchar>& image,
+                             const Mat_<double>& shape,
+                             const Mat_<double>& rotation,
+                             const BoundingBox& bounding_box,
+                             double scale);
         void Read(ifstream& fin);
         void Write(ofstream& fout);
 };
