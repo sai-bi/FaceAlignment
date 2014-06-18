@@ -14,6 +14,7 @@
 #include <cmath>
 #include <vector>
 #include <fstream>
+#include <numeric>   
 using namespace std;
 using namespace cv;
 
@@ -192,7 +193,7 @@ Mat_<double> reproject_shape(const Mat_<double>& shapes, const Bbox& bounding_bo
 
 vector<Bbox> get_bounding_box(const vector<Mat_<double> >& shapes);
 
-Mat_<double> get_mean_shape(const vector<Mat_<double> >& shapes);
+Mat_<double> get_mean_shape(const vector<Mat_<double> >& shapes, const vector<Bbox>& bounding_box);
 #endif
 
 

@@ -55,12 +55,12 @@ void train(const vector<Mat_<uchar> >& input_images,
     vector<Bbox> curr_bounding_box;
     
     // get mean_shape
-    Mat_<double> mean_shape = get_mean_shape(target_shapes);
+    Mat_<double> mean_shape = get_mean_shape(target_shapes,target_bounding_box);
     
     augment_current_shapes = project_shape(augment_current_shapes,augment_current_bounding_box);
     augment_current_shapes = reproject_shape(augment_current_shapes,augment_target_bounding_box); 
     
-    mean_shape = get_mean_shape(target_shapes); 
+    /* mean_shape = get_mean_shape(target_shapes);  */
     
 
     // train shape regressor, and save the model
@@ -70,7 +70,7 @@ void train(const vector<Mat_<uchar> >& input_images,
             pixel_pair_in_fern,
             augment_target_bounding_box);
     regressor.train();
-    regressor.save("./data/model_cofw_1.txt");
+    regressor.save("./data/model_cofw_2.txt");
 }
 
 Mat_<double> test(ShapeRegressor& regressor, const Mat_<uchar>& image, const vector<Mat_<double> > target_shapes,
@@ -401,12 +401,12 @@ void translate_scale_rotate(const Mat_<double>& shape1, const Mat_<double>& shap
     rotation(1,1) = cos_theta;
 }
 
-Mat_<double> get_mean_shape(const vector<Mat_<double> >& shapes){
-    vector<Bbox> bbox;
-    bbox = get_bounding_box(shapes);
+Mat_<double> get_mean_shape(const vector<Mat_<double> >& shapes, const vector<Bbox>& bounding_box){
+    /* vector<Bbox> bboxit6; */
+    /* bbox = get_bounding_box(shapes); */
     
     vector<Mat_<double> > temp;
-    temp = project_shape(shapes,bbox);
+    temp = project_shape(shapes,bounding_box);
     
     Mat_<double> result = Mat::zeros(shapes[0].rows,2,CV_64FC1); 
     for(int i = 0; i < temp.size();i++){
