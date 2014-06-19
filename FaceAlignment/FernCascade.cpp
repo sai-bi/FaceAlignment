@@ -168,9 +168,9 @@ Mat_<double> FernCascade::Predict(const Mat_<uchar>& image,
         result = result + ferns_[i].Predict(image,shape,rotation,bounding_box,scale); 
     }
     
-    SimilarityTransform(mean_shape,ProjectShape(shape,bounding_box),rotation,scale);
+    // SimilarityTransform(mean_shape,ProjectShape(shape,bounding_box),rotation,scale);
     transpose(rotation,rotation);
-    result = scale * result * prediction; 
+    result = scale * result * rotation; 
     
     return result; 
 }
