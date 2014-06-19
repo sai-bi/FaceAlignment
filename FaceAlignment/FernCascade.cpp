@@ -46,6 +46,11 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
     for(int i = 0;i < current_shapes.size();i++){
         regression_targets[i] = ProjectShape(ground_truth_shapes[i],bounding_box[i]) 
                                 - ProjectShape(current_shapes[i],bounding_box[i]);
+        Mat_<double> rotation;
+        double scale;
+        SimilarityTransform(mean_shape,ProjectShape(current_shapes[i],bounding_box[i]),rotation,scale);
+        transpose(rotation,rotation);
+        regression_targets[i] = scale * regression_targets[i] * rotation;
     }
     
     // get candidate pixel locations, please refer to 'shape-indexed features'
@@ -124,6 +129,13 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
         }  
     }
     
+    for(int i = 0;i < prediction.size();i++){
+        Mat_<double> rotation;
+        double scale;
+        SimilarityTransform(ProjectShape(current_shapes[i],bounding_box[i]),mean_shape,rotation,scale);
+        transpose(rotation,rotation);
+        prediction[i] = scale * prediction[i] * rotation; 
+    } 
     return prediction;    
 }
 
@@ -155,6 +167,10 @@ Mat_<double> FernCascade::Predict(const Mat_<uchar>& image,
     for(int i = 0;i < second_level_num_;i++){
         result = result + ferns_[i].Predict(image,shape,rotation,bounding_box,scale); 
     }
+    
+    SimilarityTransform(mean_shape,ProjectShape(shape,bounding_box),rotation,scale);
+    transpose(rotation,rotation);
+    result = scale * result * prediction; 
     
     return result; 
 }

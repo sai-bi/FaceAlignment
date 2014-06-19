@@ -80,6 +80,17 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
                 if(j == k){
                     continue;
                 }  
+                // avoid repeated selection
+                bool flag = false;
+                for(int p = 0;p < i;p++){
+                    if(j == selected_pixel_index_(p,0) && k == selected_pixel_index_(p,1)){
+                        flag = true;
+                        break; 
+                    } 
+                }
+                if(flag){
+                    continue;
+                }
                 double temp1 = covariance(j,j) + covariance(k,k) - 2*covariance(j,k);
                 if(temp1 < 1e-10){
                     continue;
