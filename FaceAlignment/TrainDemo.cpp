@@ -53,6 +53,8 @@ int main(){
     for(int i = 0;i < img_num;i++){
         BoundingBox temp;
         fin>>temp.start_x>>temp.start_y>>temp.width>>temp.height;
+        assert(temp.width > 1e-10);
+        assert(temp.height > 1e-10);
         temp.centroid_x = temp.start_x + temp.width/2.0;
         temp.centroid_y = temp.start_y + temp.height/2.0; 
         bounding_box.push_back(temp);

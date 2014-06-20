@@ -78,9 +78,6 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
     vector<pair<double, int> > correlation; 
     for(int j = 0;j < candidate_pixel_num;j++){
         for(int k = 0;k < candidate_pixel_num;k++){
-            if(j == k){
-                continue;
-            }  
             double temp1 = covariance(j,j) + covariance(k,k) - 2*covariance(j,k);
             if(temp1 < 1e-10){
                 continue;
@@ -214,14 +211,14 @@ Mat_<double> Fern::Predict(const Mat_<uchar>& image,
         int nearest_landmark_index_2 = selected_nearest_landmark_index_(i,1);
         double x = selected_pixel_locations_(i,0);
         double y = selected_pixel_locations_(i,1);
-        x = scale * (rotation(0,0)*x + rotation(0,1)*y) * bounding_box.width + shape(nearest_landmark_index_1,0);
-        y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height + shape(nearest_landmark_index_1,1);
+        x = scale * (rotation(0,0)*x + rotation(0,1)*y) * bounding_box.width/2.0 + shape(nearest_landmark_index_1,0);
+        y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height/2.0 + shape(nearest_landmark_index_1,1);
         double intensity_1 = (int)(image((int)y,(int)x));
 
         x = selected_pixel_locations_(i,2);
         y = selected_pixel_locations_(i,3);
-        x = scale * (rotation(0,0)*x + rotation(0,1)*y) * bounding_box.width + shape(nearest_landmark_index_2,0);
-        y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height + shape(nearest_landmark_index_2,1);
+        x = scale * (rotation(0,0)*x + rotation(0,1)*y) * bounding_box.width/2.0 + shape(nearest_landmark_index_2,0);
+        y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height/2.0 + shape(nearest_landmark_index_2,1);
         double intensity_2 = (int)(image((int)y,(int)x));
 
         if(intensity_1 - intensity_2 >= threshold_(i)){

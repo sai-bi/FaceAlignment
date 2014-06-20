@@ -59,7 +59,7 @@ Mat_<double> ReProjectShape(const Mat_<double>& shape, const BoundingBox& boundi
 
 
 void SimilarityTransform(const Mat_<double>& shape1, const Mat_<double>& shape2, 
-                         Mat_<double>& rotation,double scale){
+                         Mat_<double>& rotation,double& scale){
     rotation = Mat::zeros(2,2,CV_64FC1);
     scale = 0;
     
