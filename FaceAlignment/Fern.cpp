@@ -51,51 +51,47 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
     threshold_.create(fern_pixel_num,1);
 
     // get a random direction
-    Mat_<double> random_direction(landmark_num_ * 2,1);
-    random_generator.fill(random_direction,RNG::UNIFORM,-1.1,1.1);
-    normalize(random_direction,random_direction);
-    // Mat_<double> projection_result(regression_targets.size(),1);
-    vector<double> projection_result; 
-    // project regression targets along the random direction 
-    for(int j = 0;j < regression_targets.size();j++){
-        double temp = 0;
-        for(int k = 0;k < regression_targets[j].rows;k++){
-            temp = temp + regression_targets[j](k,0) * random_direction(2*k) 
-                + regression_targets[j](k,1) * random_direction(2*k+1); 
-        }
-        projection_result.push_back(temp);
-    } 
-
-    Mat_<double> covariance_projection_density(candidate_pixel_num,1);
-    for(int j = 0;j < candidate_pixel_num;j++){
-        covariance_projection_density(j) = calculate_covariance(projection_result,candidate_pixel_intensity[j]);
-    }
-
-    // find max correlation
-    double max_correlation = -1;
-    int max_pixel_index_1 = 0;
-    int max_pixel_index_2 = 0;
-    vector<pair<double, int> > correlation; 
-    for(int j = 0;j < candidate_pixel_num;j++){
-        for(int k = 0;k < candidate_pixel_num;k++){
-            double temp1 = covariance(j,j) + covariance(k,k) - 2*covariance(j,k);
-            if(temp1 < 1e-10){
-                continue;
-            }
-            double temp = (covariance_projection_density(j) - covariance_projection_density(k))
-                / sqrt(temp1);
-            pair<double,int> temp2;
-            temp2.first = temp;
-            temp2.second = j * candidate_pixel_num + k;
-            correlation.push_back(temp2); 
-        }
-    }
-    sort(correlation.begin(),correlation.end());
-
     for(int i = 0;i < fern_pixel_num;i++){
-        int index = correlation[correlation.size()-1-i].second; 
-        int max_pixel_index_1 = index / candidate_pixel_num;
-        int max_pixel_index_2 = index % candidate_pixel_num;
+        Mat_<double> random_direction(landmark_num_ * 2,1);
+        random_generator.fill(random_direction,RNG::UNIFORM,-1.1,1.1);
+        normalize(random_direction,random_direction);
+        // Mat_<double> projection_result(regression_targets.size(),1);
+        vector<double> projection_result; 
+        // project regression targets along the random direction 
+        for(int j = 0;j < regression_targets.size();j++){
+            double temp = 0;
+            for(int k = 0;k < regression_targets[j].rows;k++){
+                temp = temp + regression_targets[j](k,0) * random_direction(2*k) 
+                    + regression_targets[j](k,1) * random_direction(2*k+1); 
+            }
+            projection_result.push_back(temp);
+        } 
+
+        Mat_<double> covariance_projection_density(candidate_pixel_num,1);
+        for(int j = 0;j < candidate_pixel_num;j++){
+            covariance_projection_density(j) = calculate_covariance(projection_result,candidate_pixel_intensity[j]);
+        }
+
+        // find max correlation
+        double max_correlation = -1;
+        int max_pixel_index_1 = 0;
+        int max_pixel_index_2 = 0;
+        for(int j = 0;j < candidate_pixel_num;j++){
+            for(int k = j+1;k < candidate_pixel_num;k++){
+                double temp1 = covariance(j,j) + covariance(k,k) - 2*covariance(j,k);
+                if(temp1 < 1e-10){
+                    continue;
+                }
+                double temp = (covariance_projection_density(j) - covariance_projection_density(k))
+                    / sqrt(temp1);
+                if(abs(temp) > max_correlation){
+                    max_correlation = abs(temp);
+                    max_pixel_index_1 = j;
+                    max_pixel_index_2 = k;
+                }
+            }
+        }
+
         selected_pixel_index_(i,0) = max_pixel_index_1;
         selected_pixel_index_(i,1) = max_pixel_index_2; 
         selected_pixel_locations_(i,0) = candidate_pixel_locations(max_pixel_index_1,0);
@@ -112,11 +108,10 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
             if(abs(temp) > max_diff){
                 max_diff = abs(temp);
             }
-        } 
-        threshold_(i) = random_generator.uniform(-0.2 * max_diff, 0.2 * max_diff);
+        }
+        threshold_(i) = random_generator.uniform(-0.2*max_diff,0.2*max_diff); 
     } 
-   
-    
+
 
     // determine the bins of each shape
     vector<vector<int> > shapes_in_bin;
@@ -213,12 +208,16 @@ Mat_<double> Fern::Predict(const Mat_<uchar>& image,
         double y = selected_pixel_locations_(i,1);
         x = scale * (rotation(0,0)*x + rotation(0,1)*y) * bounding_box.width/2.0 + shape(nearest_landmark_index_1,0);
         y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height/2.0 + shape(nearest_landmark_index_1,1);
+        x = std::max(0.0,std::min((double)x,image.cols-1.0));
+        y = std::max(0.0,std::min((double)y,image.rows-1.0)); 
         double intensity_1 = (int)(image((int)y,(int)x));
 
         x = selected_pixel_locations_(i,2);
         y = selected_pixel_locations_(i,3);
         x = scale * (rotation(0,0)*x + rotation(0,1)*y) * bounding_box.width/2.0 + shape(nearest_landmark_index_2,0);
         y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height/2.0 + shape(nearest_landmark_index_2,1);
+        x = std::max(0.0,std::min((double)x,image.cols-1.0));
+        y = std::max(0.0,std::min((double)y,image.rows-1.0));
         double intensity_2 = (int)(image((int)y,(int)x));
 
         if(intensity_1 - intensity_2 >= threshold_(i)){

@@ -163,7 +163,6 @@ Mat_<double> ShapeRegressor::Predict(const Mat_<uchar>& image, const BoundingBox
         BoundingBox current_bounding_box = bounding_box_[index];
         current_shape = ProjectShape(current_shape,current_bounding_box);
         current_shape = ReProjectShape(current_shape,bounding_box);
-         
         for(int j = 0;j < first_level_num_;j++){
             Mat_<double> prediction = fern_cascades_[j].Predict(image,bounding_box,mean_shape_,current_shape);
             // update current shape
