@@ -79,7 +79,7 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
         for(int j = 0;j < candidate_pixel_num;j++){
             for(int k = j+1;k < candidate_pixel_num;k++){
                 double temp1 = covariance(j,j) + covariance(k,k) - 2*covariance(j,k);
-                if(temp1 < 1e-10){
+                if(abs(temp1) < 1e-10){
                     continue;
                 }
                 double temp = (covariance_projection_density(j) - covariance_projection_density(k))

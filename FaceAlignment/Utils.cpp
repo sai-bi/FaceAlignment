@@ -29,14 +29,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Mat_<double> GetMeanShape(const vector<Mat_<double> >& shapes,
                           const vector<BoundingBox>& bounding_box){
-    vector<Mat_<double> > temp;
-    Mat_<double> result(shapes[0].rows,2,CV_64FC1);
+    Mat_<double> result = Mat::zeros(shapes[0].rows,2,CV_64FC1);
     for(int i = 0;i < shapes.size();i++){
-        temp.push_back(ProjectShape(shapes[i],bounding_box[i]));
+        result = result + ProjectShape(shapes[i],bounding_box[i]);
     }
-    result = std::accumulate(temp.begin(),temp.end(),result);    
-    
-    return (1.0 / shapes.size() * result); 
+    result = 1.0 / shapes.size() * result;
+
+    return result;
 }
 
 Mat_<double> ProjectShape(const Mat_<double>& shape, const BoundingBox& bounding_box){

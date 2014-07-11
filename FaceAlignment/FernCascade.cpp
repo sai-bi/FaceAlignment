@@ -63,7 +63,7 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
         }
         // find nearest landmark index
         double min_dist = 1e10;
-        double min_index = 0;
+        int min_index = 0;
         for(int j = 0;j < mean_shape.rows;j++){
             double temp = pow(mean_shape(j,0)-x,2.0) + pow(mean_shape(j,1)-y,2.0);
             if(temp < min_dist){
