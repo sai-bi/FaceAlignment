@@ -47,13 +47,18 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
     // densities and regression targets
     // for details, please refer to "Face Alignment by Explicit Shape Regression" 
     // threshold_: thresholds for each pair of pixels in fern 
-    RNG random_generator(getTickCount());
+    
+    // RNG random_generator(1000000);
     threshold_.create(fern_pixel_num,1);
+    
 
     // get a random direction
+    RNG random_generator(getTickCount());
     for(int i = 0;i < fern_pixel_num;i++){
+        // RNG random_generator(i);
         Mat_<double> random_direction(landmark_num_ * 2,1);
         random_generator.fill(random_direction,RNG::UNIFORM,-1.1,1.1);
+
         normalize(random_direction,random_direction);
         // Mat_<double> projection_result(regression_targets.size(),1);
         vector<double> projection_result; 
@@ -77,22 +82,35 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
         int max_pixel_index_1 = 0;
         int max_pixel_index_2 = 0;
         for(int j = 0;j < candidate_pixel_num;j++){
-            for(int k = j+1;k < candidate_pixel_num;k++){
+            for(int k = 0;k < candidate_pixel_num;k++){
                 double temp1 = covariance(j,j) + covariance(k,k) - 2*covariance(j,k);
                 if(abs(temp1) < 1e-10){
                     continue;
                 }
+                bool flag = false;
+                for(int p = 0;p < i;p++){
+                    if(j == selected_pixel_index_(p,0) && k == selected_pixel_index_(p,1)){
+                        flag = true;
+                        break; 
+                    }else if(j == selected_pixel_index_(p,1) && k == selected_pixel_index_(p,0)){
+                        flag = true;
+                        break;
+                    } 
+                }
+                if(flag){
+                    continue;
+                } 
                 double temp = (covariance_projection_density(j) - covariance_projection_density(k))
                     / sqrt(temp1);
                 if(abs(temp) > max_correlation){
-                    max_correlation = abs(temp);
+                    max_correlation = temp;
                     max_pixel_index_1 = j;
                     max_pixel_index_2 = k;
                 }
             }
         }
 
-        selected_pixel_index_(i,0) = max_pixel_index_1;
+        selected_pixel_index_(i,0) = max_pixel_index_1; 
         selected_pixel_index_(i,1) = max_pixel_index_2; 
         selected_pixel_locations_(i,0) = candidate_pixel_locations(max_pixel_index_1,0);
         selected_pixel_locations_(i,1) = candidate_pixel_locations(max_pixel_index_1,1);
@@ -109,7 +127,9 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
                 max_diff = abs(temp);
             }
         }
+
         threshold_(i) = random_generator.uniform(-0.2*max_diff,0.2*max_diff); 
+        // threshold_(i) = 0.1 * max_diff; 
     } 
 
 
@@ -159,17 +179,21 @@ void Fern::Write(ofstream& fout){
     fout<<fern_pixel_num_<<endl;
     fout<<landmark_num_<<endl;
     for(int i = 0;i < fern_pixel_num_;i++){
-        fout<<selected_nearest_landmark_index_(i,0)<<" "<<selected_nearest_landmark_index_(i,1)<<endl;
         fout<<selected_pixel_locations_(i,0)<<" "<<selected_pixel_locations_(i,1)<<" "
             <<selected_pixel_locations_(i,2)<<" "<<selected_pixel_locations_(i,3)<<" "<<endl;
+        fout<<selected_nearest_landmark_index_(i,0)<<endl;
+        fout<<selected_nearest_landmark_index_(i,1)<<endl;
         fout<<threshold_(i)<<endl;
-    }        
+    }
     for(int i = 0;i < bin_output_.size();i++){
         for(int j = 0;j < bin_output_[i].rows;j++){
             fout<<bin_output_[i](j,0)<<" "<<bin_output_[i](j,1)<<" ";
         }
         fout<<endl;
     } 
+    // fout<<"*******************************************************"<<endl;
+    // fout<<"*******************************************************"<<endl;
+
 }
 
 void Fern::Read(ifstream& fin){
@@ -179,9 +203,9 @@ void Fern::Read(ifstream& fin){
     selected_pixel_locations_.create(fern_pixel_num_,4);
     threshold_.create(fern_pixel_num_,1);
     for(int i = 0;i < fern_pixel_num_;i++){
-        fin>>selected_nearest_landmark_index_(i,0)>>selected_nearest_landmark_index_(i,1);
         fin>>selected_pixel_locations_(i,0)>>selected_pixel_locations_(i,1)
             >>selected_pixel_locations_(i,2)>>selected_pixel_locations_(i,3);
+        fin>>selected_nearest_landmark_index_(i,0)>>selected_nearest_landmark_index_(i,1);
         fin>>threshold_(i);
     }       
      

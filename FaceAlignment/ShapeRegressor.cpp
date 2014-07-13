@@ -62,7 +62,8 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
         for(int j = 0;j < initial_num;j++){
             int index = 0;
             do{
-                index = random_generator.uniform(0,images.size());
+                // index = random_generator.uniform(0,images.size());
+                index = (i+j+1) % (images.size()); 
             }while(index == i);
             augmented_images.push_back(images[i]);
             augmented_ground_truth_shapes.push_back(ground_truth_shapes[i]);
@@ -104,7 +105,8 @@ void ShapeRegressor::Write(ofstream& fout){
         fout<<mean_shape_(i,0)<<" "<<mean_shape_(i,1)<<" "; 
     }
     fout<<endl;
-
+    
+    /*
     fout<<training_shapes_.size()<<endl;
     for(int i = 0;i < training_shapes_.size();i++){
         fout<<bounding_box_[i].start_x<<" "<<bounding_box_[i].start_y<<" "
@@ -115,6 +117,7 @@ void ShapeRegressor::Write(ofstream& fout){
         }
         fout<<endl;
     }
+    */
     
     for(int i = 0;i < first_level_num_;i++){
         fern_cascades_[i].Write(fout);

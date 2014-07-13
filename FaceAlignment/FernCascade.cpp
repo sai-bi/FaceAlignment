@@ -50,17 +50,32 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
         double scale;
         SimilarityTransform(mean_shape,ProjectShape(current_shapes[i],bounding_box[i]),rotation,scale);
         transpose(rotation,rotation);
+        // if(i == 0){
+            // cout<<"mean_shape: "<<mean_shape<<endl;
+            // cout<<"target_shape: "<<ProjectShape(current_shapes[i],bounding_box[i])<<endl;
+            // cout<<"scale: "<<scale<<endl;
+            // cout<<rotation<<endl; 
+        // }
         regression_targets[i] = scale * regression_targets[i] * rotation;
     }
+
+    // cout<<regression_targets[0]<<endl;
     
     // get candidate pixel locations, please refer to 'shape-indexed features'
+    int my_count = 0;
+
     for(int i = 0;i < candidate_pixel_num;i++){
+        // random_generator = RNG(my_count); 
         double x = random_generator.uniform(-1.0,1.0);
+        // my_count++;
+        // random_generator = RNG(my_count);
         double y = random_generator.uniform(-1.0,1.0);
         if(x*x + y*y > 1.0){
             i--;
+            // my_count++;
             continue;
         }
+        // my_count++;
         // find nearest landmark index
         double min_dist = 1e10;
         int min_index = 0;
@@ -166,8 +181,8 @@ Mat_<double> FernCascade::Predict(const Mat_<uchar>& image,
     for(int i = 0;i < second_level_num_;i++){
         result = result + ferns_[i].Predict(image,shape,rotation,bounding_box,scale); 
     }
-    // SimilarityTransform(mean_shape,ProjectShape(shape,bounding_box),rotation,scale);
-    transpose(rotation,rotation);
+
+    SimilarityTransform(mean_shape,ProjectShape(shape,bounding_box),rotation,scale);
     result = scale * result * rotation; 
     
     return result; 

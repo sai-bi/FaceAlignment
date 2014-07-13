@@ -141,7 +141,6 @@ Mat_<double> ProjectShape(const Mat_<double>& shape, const BoundingBox& bounding
 Mat_<double> ReProjectShape(const Mat_<double>& shape, const BoundingBox& bounding_box);
 void SimilarityTransform(const Mat_<double>& shape1, const Mat_<double>& shape2, 
                          Mat_<double>& rotation,double& scale);
-// double calculate_covariance(const Mat_<double>& v_1, const Mat_<double>& v_2);
 double calculate_covariance(const vector<double>& v_1, 
                             const vector<double>& v_2);
 #endif
