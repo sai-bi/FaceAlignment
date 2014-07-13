@@ -32,6 +32,9 @@ For details, please see `TrainDemo.cpp` and `TestDemo.cpp`.
 A public dataset is provided [here](https://drive.google.com/file/d/0B0tUTCaZBkccUU5hVkNJTFB0VDQ/edit?usp=sharing). The dataset contains 1345 training images, 507 testing images, and each image has 29 landmarks. You can change the path
 in `TrainDemo.cpp` and `TestDemo.cpp` to train new models.
 
+###Model
+I have prepared a model trained by me on COFW dataset, and you can access it [here](https://drive.google.com/file/d/0B0tUTCaZBkccOGZTcjJNcDMwa28/edit?usp=sharing).
+
 ###Sample Results
 ![Sample Results](https://dl.dropboxusercontent.com/u/47747425/Photo/point1.png)
 
