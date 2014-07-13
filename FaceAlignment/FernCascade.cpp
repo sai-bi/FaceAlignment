@@ -164,14 +164,10 @@ Mat_<double> FernCascade::Predict(const Mat_<uchar>& image,
     Mat_<double> result = Mat::zeros(shape.rows,2,CV_64FC1);
     Mat_<double> rotation;
     double scale;
-    // cout<<bounding_box.start_x<<" "<<bounding_box.start_y<<" "<<bounding_box.width<<" "<<bounding_box.height<<" "
-        // <<bounding_box.centroid_x<<" "<<bounding_box.centroid_y<<endl;
     SimilarityTransform(ProjectShape(shape,bounding_box),mean_shape,rotation,scale);
     for(int i = 0;i < second_level_num_;i++){
         result = result + ferns_[i].Predict(image,shape,rotation,bounding_box,scale); 
     }
-    // cout<<result<<endl;
-    // cin>>scale;
     SimilarityTransform(ProjectShape(shape,bounding_box),mean_shape,rotation,scale);
     transpose(rotation,rotation);
     result = scale * result * rotation; 
