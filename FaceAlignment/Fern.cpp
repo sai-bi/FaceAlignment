@@ -48,10 +48,7 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
     // for details, please refer to "Face Alignment by Explicit Shape Regression" 
     // threshold_: thresholds for each pair of pixels in fern 
     
-    // RNG random_generator(1000000);
     threshold_.create(fern_pixel_num,1);
-    
-
     // get a random direction
     RNG random_generator(getTickCount());
     for(int i = 0;i < fern_pixel_num;i++){
@@ -129,7 +126,6 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
         }
 
         threshold_(i) = random_generator.uniform(-0.2*max_diff,0.2*max_diff); 
-        // threshold_(i) = 0.1 * max_diff; 
     } 
 
 
@@ -230,25 +226,26 @@ Mat_<double> Fern::Predict(const Mat_<uchar>& image,
         int nearest_landmark_index_2 = selected_nearest_landmark_index_(i,1);
         double x = selected_pixel_locations_(i,0);
         double y = selected_pixel_locations_(i,1);
-        x = scale * (rotation(0,0)*x + rotation(0,1)*y) * bounding_box.width/2.0 + shape(nearest_landmark_index_1,0);
-        y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height/2.0 + shape(nearest_landmark_index_1,1);
-        x = std::max(0.0,std::min((double)x,image.cols-1.0));
-        y = std::max(0.0,std::min((double)y,image.rows-1.0)); 
-        double intensity_1 = (int)(image((int)y,(int)x));
+        double project_x = scale * (rotation(0,0)*x + rotation(0,1)*y) * bounding_box.width/2.0 + shape(nearest_landmark_index_1,0);
+        double project_y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height/2.0 + shape(nearest_landmark_index_1,1);
+
+        project_x = std::max(0.0,std::min((double)project_x,image.cols-1.0));
+        project_y = std::max(0.0,std::min((double)project_y,image.rows-1.0)); 
+        double intensity_1 = (int)(image((int)project_y,(int)project_x));
 
         x = selected_pixel_locations_(i,2);
         y = selected_pixel_locations_(i,3);
-        x = scale * (rotation(0,0)*x + rotation(0,1)*y) * bounding_box.width/2.0 + shape(nearest_landmark_index_2,0);
-        y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height/2.0 + shape(nearest_landmark_index_2,1);
-        x = std::max(0.0,std::min((double)x,image.cols-1.0));
-        y = std::max(0.0,std::min((double)y,image.rows-1.0));
-        double intensity_2 = (int)(image((int)y,(int)x));
+        project_x = scale * (rotation(0,0)*x + rotation(0,1)*y) * bounding_box.width/2.0 + shape(nearest_landmark_index_2,0);
+        project_y = scale * (rotation(1,0)*x + rotation(1,1)*y) * bounding_box.height/2.0 + shape(nearest_landmark_index_2,1);
+        project_x = std::max(0.0,std::min((double)project_x,image.cols-1.0));
+        project_y = std::max(0.0,std::min((double)project_y,image.rows-1.0));
+        double intensity_2 = (int)(image((int)project_y,(int)project_x));
 
         if(intensity_1 - intensity_2 >= threshold_(i)){
             index = index + (int)(pow(2,i));
-        } 
+        }
     }
-
     return bin_output_[index];
+   
 }
 

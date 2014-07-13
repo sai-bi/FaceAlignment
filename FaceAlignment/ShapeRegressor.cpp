@@ -62,7 +62,6 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
         for(int j = 0;j < initial_num;j++){
             int index = 0;
             do{
-                // index = random_generator.uniform(0,images.size());
                 index = (i+j+1) % (images.size()); 
             }while(index == i);
             augmented_images.push_back(images[i]);
@@ -106,7 +105,6 @@ void ShapeRegressor::Write(ofstream& fout){
     }
     fout<<endl;
     
-    /*
     fout<<training_shapes_.size()<<endl;
     for(int i = 0;i < training_shapes_.size();i++){
         fout<<bounding_box_[i].start_x<<" "<<bounding_box_[i].start_y<<" "
@@ -117,7 +115,6 @@ void ShapeRegressor::Write(ofstream& fout){
         }
         fout<<endl;
     }
-    */
     
     for(int i = 0;i < first_level_num_;i++){
         fern_cascades_[i].Write(fout);
@@ -161,6 +158,7 @@ Mat_<double> ShapeRegressor::Predict(const Mat_<uchar>& image, const BoundingBox
     Mat_<double> result = Mat::zeros(landmark_num_,2, CV_64FC1);
     RNG random_generator(getTickCount());
     for(int i = 0;i < initial_num;i++){
+        random_generator = RNG(i);
         int index = random_generator.uniform(0,training_shapes_.size());
         Mat_<double> current_shape = training_shapes_[index];
         BoundingBox current_bounding_box = bounding_box_[index];

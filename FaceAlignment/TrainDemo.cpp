@@ -71,7 +71,23 @@ int main(){
             fin>>temp(j,1); 
         }
         ground_truth_shapes.push_back(temp);
-    }        
+    }
+
+   /*  ofstream fout; */
+    // fout.open("./data/temp.txt");
+    // fout<<ground_truth_shapes.size()<<endl;
+    // for(int i = 0;i < ground_truth_shapes.size();i++){
+        // fout<<bounding_box[i].start_x<<" "<<bounding_box[i].start_y<<" "
+            // <<bounding_box[i].width<<" "<<bounding_box[i].height<<" "
+            // <<bounding_box[i].centroid_x<<" "<<bounding_box[i].centroid_y<<endl;
+        // for(int j = 0;j < ground_truth_shapes[i].rows;j++){
+            // fout<<ground_truth_shapes[i](j,0)<<" "<<ground_truth_shapes[i](j,1)<<" "; 
+        // }
+        // fout<<endl;
+    // }
+    
+    /* return 0;  */
+    
     fin.close(); 
     
     ShapeRegressor regressor;
