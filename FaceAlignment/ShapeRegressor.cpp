@@ -182,6 +182,10 @@ void ShapeRegressor::Load(string path){
     cout<<"Loading model..."<<endl;
     ifstream fin;
     fin.open(path);
+    if(!fin.is_open()){
+        cout<<"Fail to load model!"<<endl;
+        exit(-1);
+    }
     this->Read(fin); 
     fin.close();
     cout<<"Model loaded successfully..."<<endl;
@@ -191,6 +195,10 @@ void ShapeRegressor::Save(string path){
     cout<<"Saving model..."<<endl;
     ofstream fout;
     fout.open(path);
+    if(!fout.is_open()){
+        cout<<"Fail to save model!"<<endl;
+        exit(-1);
+    }
     this->Write(fout);
     fout.close();
 }

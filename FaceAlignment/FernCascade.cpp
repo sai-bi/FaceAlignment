@@ -40,6 +40,7 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
     vector<Mat_<double> > regression_targets;
     RNG random_generator(getTickCount());
     second_level_num_ = second_level_num;
+    model_compress_flag_ = model_compress_flag;
     
     // calculate regression targets: the difference between ground truth shapes and current shapes
     // candidate_pixel_locations: the locations of candidate pixels, indexed relative to its nearest landmark on mean shape 
@@ -124,12 +125,12 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
     ferns_.resize(second_level_num);
 
     Mat_<double> regression_targets_copy = regression_targets.clone(); 
-    Mat_<double> sparse_basis;
+    // Mat_<double> sparse_basis;
     for(int i = 0;i < second_level_num;i++){
         cout<<"Training ferns: "<<i+1<<" out of "<<second_level_num<<endl;
         
         vector<Mat_<double> > temp = ferns_[i].Train(densities,covariance,candidate_pixel_locations,
-                nearest_landmark_index,regression_targets_copy,fern_pixel_num,false,sparse_basis);     
+                nearest_landmark_index,regression_targets_copy,fern_pixel_num,false,sparse_basis_);     
         
         for(int j = 0;j < temp.size();j++){
             prediction[j] = prediction[j] + temp[j];
@@ -145,7 +146,7 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
         // (second_level_num * 2^fern_pixel_num) outputs;
         int basis_number = 512;
         int landmark_num = prediction[0].rows; 
-        sparse_basis = Mat_<double>(landmark_num,basis_number);
+        sparse_basis_ = Mat_<double>(landmark_num*2,basis_number);
         int bin_num = pow(2.0,fern_pixel_num);
         Mat_<int> index(second_level_num * bin_num,1);
         for(int i = 0;i < index.rows;i++){
@@ -154,12 +155,12 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
         randShuffle(index,0,random_generator);
         for(int i = 0;i < basis_number;i++){
             Mat_<double> temp = ferns[index(i)/bin_num].GetFernOutput(index(i) % bin_num);
-            temp.copyTo(sparse_basis(Range::all(), Range(i,i+1)));  
+            temp.copyTo(sparse_basis_(Range::all(), Range(i,i+1)));  
         }
         // after get basis, reconstruct the fern
         for(int i = 0;i < second_level_num;i++){
             vector<Mat_<double> > temp = ferns_[i].Train(densities,covariance,candidate_pixel_locations,
-                nearest_landmark_index,regression_targets_copy,fern_pixel_num,true,sparse_basis); 
+                nearest_landmark_index,regression_targets_copy,fern_pixel_num,true,sparse_basis_); 
             for(int j = 0;j < temp.size();j++){
                 prediction[j] = prediction[j] + temp[j];
                 regression_targets[j] = regression_targets[j] - temp[j];
@@ -179,6 +180,20 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
 
 void FernCascade::Read(ifstream& fin){
     fin>>second_level_num_; 
+    fin>>model_compress_flag_;
+    
+    if(model_compress_flag_ == true){
+        int rows;
+        int cols;
+        fin>>rows>>cols;
+        sparse_basis_ = Mat::zeros(rows,cols,CV_64FC1);
+        for(int i = 0; i < sparse_basis_.rows;i++){
+            for(int j = 0;j < sparse_basis_.cols;j++){
+                fin>>sparse_basis_(i,j);
+            }
+        } 
+    }
+
     ferns_.resize(second_level_num_);
     for(int i = 0;i < second_level_num_;i++){
         ferns_[i].Read(fin);
@@ -187,6 +202,18 @@ void FernCascade::Read(ifstream& fin){
 
 void FernCascade::Write(ofstream& fout){
     fout<<second_level_num_<<endl;
+    fout<<model_compress_flag_<<endl;
+    
+    if(model_compress_flag_ == true){
+        fout<<sparse_basis_.rows<<" "<<sparse_basis_.cols<<endl;
+        for(int i = 0; i < sparse_basis_.rows;i++){
+            for(int j = 0;j < sparse_basis_.cols;j++){
+                fout<<sparse_basis_(i,j)<<" ";
+            }
+            fout<<endl;
+        } 
+    }
+
     for(int i = 0;i < second_level_num_;i++){
         ferns_[i].Write(fout);
     }   

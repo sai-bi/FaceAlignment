@@ -194,6 +194,7 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
 
 
 void Fern::Write(ofstream& fout){
+    fout<<model_compress_flag_<<endl;
     fout<<fern_pixel_num_<<endl;
     fout<<landmark_num_<<endl;
     for(int i = 0;i < fern_pixel_num_;i++){
@@ -225,6 +226,7 @@ void Fern::Write(ofstream& fout){
 }
 
 void Fern::Read(ifstream& fin){
+    fin>>model_compress_flag_;
     fin>>fern_pixel_num_;
     fin>>landmark_num_;
     selected_nearest_landmark_index_.create(fern_pixel_num_,2);
@@ -236,14 +238,29 @@ void Fern::Read(ifstream& fin){
         fin>>selected_nearest_landmark_index_(i,0)>>selected_nearest_landmark_index_(i,1);
         fin>>threshold_(i);
     }       
-     
     int bin_num = pow(2.0,fern_pixel_num_);
-    for(int i = 0;i < bin_num;i++){
-        Mat_<double> temp(landmark_num_,2);
-        for(int j = 0;j < landmark_num_;j++){
-            fin>>temp(j,0)>>temp(j,1);
+    if(model_compress_flag_ == 0){ 
+        for(int i = 0;i < bin_num;i++){
+            Mat_<double> temp(landmark_num_,2);
+            for(int j = 0;j < landmark_num_;j++){
+                fin>>temp(j,0)>>temp(j,1);
+            }
+            bin_output_.push_back(temp);
         }
-        bin_output_.push_back(temp);
+    }
+    else{
+        sparse_output_.resize(bin_num);
+        for(int i = 0;i < bin_num;i++){
+            int non_zero_size;
+            fin>>non_zero_size;
+            for(int j = 0;j < non_zero_size;j++){
+                int index;
+                int value;
+                fin>>index>>value;
+                sparse_output_[i].push_back(index);
+                sparse_output_[i].push_back(value); 
+            }        
+        }        
     }
 }
 

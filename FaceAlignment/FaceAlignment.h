@@ -116,6 +116,8 @@ class FernCascade{
     private:
         vector<Fern> ferns_;
         int second_level_num_;
+        Mat_<double> sparse_basis_;
+        bool model_compress_flag_;
 };
 
 class ShapeRegressor{
