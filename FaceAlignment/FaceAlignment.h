@@ -75,7 +75,8 @@ class Fern{
         Mat_<int> selected_pixel_index_;
         Mat_<double> selected_pixel_locations_;
         vector<Mat_<double> > bin_output_;
-        vector<Mat_<int> > sparse_output_;
+        vector<vector<double> > sparse_output_;
+        bool model_compress_flag_;
     public:
         vector<Mat_<double> > Train(const vector<vector<double> >& candidate_pixel_intensity, 
                                     const Mat_<double>& covariance,

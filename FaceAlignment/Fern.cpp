@@ -38,6 +38,7 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
     // selected_pixel_index_: fern_pixel_num*2 matrix, the index of selected pixels pairs in fern
     // selected_pixel_locations_: fern_pixel_num*4 matrix, the locations of selected pixel pairs
     //                            stored in the format (x_1,y_1,x_2,y_2) for each row 
+    model_compress_flag_ = model_compress_flag;
     fern_pixel_num_ = fern_pixel_num;
     landmark_num_ = regression_targets[0].rows;
     selected_pixel_index_.create(fern_pixel_num,2);
@@ -161,16 +162,33 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
         }
         if(bin_size == 0){
             bin_output_[i] = temp; 
+            // sparse_output_[i] = Mat::zeros(1,2,CV_64FC1);
             continue; 
         }
          
         temp = (1.0/((1.0+1000.0/bin_size) * bin_size)) * temp;
         bin_output_[i] = temp;
+        
+        if(model_compress_flag){
+            OthogonalMatchingPursuit(sparse_basis,temp,5,sparse_output_[i]);
+            // non_zero_index: stores the index and value of non-zero elements in sparse output.
+            vector<double> non_zero_index;
+            for(int j = 0;j < sparse_output_[i].rows;j++){
+                if(abs(sparse_output_[i](j)) > 1e-12){
+                    non_zero_index.push_back(j);
+                    non_zero_index.push_back(sparse_output_[i](j)); 
+                }  
+            }
+            // real output 
+            temp = sparse_basis * sparse_output_[i];
+        }
+        
         for(int j = 0;j < bin_size;j++){
             int index = shapes_in_bin[i][j];
             prediction[index] = temp;
         }
     }
+
     return prediction;
 }
 
@@ -185,13 +203,25 @@ void Fern::Write(ofstream& fout){
         fout<<selected_nearest_landmark_index_(i,1)<<endl;
         fout<<threshold_(i)<<endl;
     }
-    for(int i = 0;i < bin_output_.size();i++){
-        for(int j = 0;j < bin_output_[i].rows;j++){
-            fout<<bin_output_[i](j,0)<<" "<<bin_output_[i](j,1)<<" ";
+    if(model_compress_flag_ == false){
+        for(int i = 0;i < bin_output_.size();i++){
+            for(int j = 0;j < bin_output_[i].rows;j++){
+                fout<<bin_output_[i](j,0)<<" "<<bin_output_[i](j,1)<<" ";
+            }
+            fout<<endl;
         }
-        fout<<endl;
+    }
+    else{
+        // if compressed, just output the index and value of non-zero elements
+        for(int i = 0;i < sparse_output_.size();i++){
+            // non-zero elements size
+            fout<<sparse_output_[i].size()<<endl;
+            for(int j = 0;j < sparse_output_[i].size();j=j+2){
+                // output: index, value
+                fout<<sparse_output_[i][j]<<" "<<sparse_output_[i][j+1]<<endl;
+            }        
+        }
     } 
-
 }
 
 void Fern::Read(ifstream& fin){
