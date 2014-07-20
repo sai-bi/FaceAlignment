@@ -90,7 +90,8 @@ class Fern{
                              const Mat_<double>& shape,
                              const Mat_<double>& rotation,
                              const BoundingBox& bounding_box,
-                             double scale);
+                             double scale,
+                             const Mat_<double>& sparse_basis);
         void Read(ifstream& fin);
         void Write(ofstream& fout);
         Mat_<double> GetFernOutput(int index);

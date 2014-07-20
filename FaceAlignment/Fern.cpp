@@ -268,7 +268,8 @@ Mat_<double> Fern::Predict(const Mat_<uchar>& image,
                      const Mat_<double>& shape,
                      const Mat_<double>& rotation,
                      const BoundingBox& bounding_box,
-                     double scale){
+                     double scale,
+                     const Mat_<double>& sparse_basis){
     int index = 0;
     for(int i = 0;i < fern_pixel_num_;i++){
         int nearest_landmark_index_1 = selected_nearest_landmark_index_(i,0);
@@ -294,8 +295,16 @@ Mat_<double> Fern::Predict(const Mat_<uchar>& image,
             index = index + (int)(pow(2,i));
         }
     }
-    return bin_output_[index];
-   
+
+    if(model_compress_flag_ == false){
+        return bin_output_[index];
+    }
+
+    Mat_<double> sparse_result = Mat::zeros(sparse_basis.cols,1,CV_64FC1);
+    for(int i = 0;i < sparse_output_[index].size();i=i+2){
+        sparse_result((int)sparse_output_[index][i]) = sparse_output_[index][i+1];
+    }
+    return sparse_basis * sparse_result; 
 }
 
 Mat_<double> Fern::GetFernOutput(int index){

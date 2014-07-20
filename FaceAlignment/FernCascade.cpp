@@ -224,12 +224,13 @@ Mat_<double> FernCascade::Predict(const Mat_<uchar>& image,
                           const BoundingBox& bounding_box, 
                           const Mat_<double>& mean_shape,
                           const Mat_<double>& shape){   
+
     Mat_<double> result = Mat::zeros(shape.rows,2,CV_64FC1);
     Mat_<double> rotation;
     double scale;
     SimilarityTransform(ProjectShape(shape,bounding_box),mean_shape,rotation,scale);
     for(int i = 0;i < second_level_num_;i++){
-        result = result + ferns_[i].Predict(image,shape,rotation,bounding_box,scale); 
+        result = result + ferns_[i].Predict(image,shape,rotation,bounding_box,scale,sparse_basis_); 
     }
     SimilarityTransform(ProjectShape(shape,bounding_box),mean_shape,rotation,scale);
     transpose(rotation,rotation);
