@@ -75,13 +75,16 @@ class Fern{
         Mat_<int> selected_pixel_index_;
         Mat_<double> selected_pixel_locations_;
         vector<Mat_<double> > bin_output_;
+        vector<Mat_<int> > sparse_output_;
     public:
         vector<Mat_<double> > Train(const vector<vector<double> >& candidate_pixel_intensity, 
                                     const Mat_<double>& covariance,
                                     const Mat_<double>& candidate_pixel_locations,
                                     const Mat_<int>& nearest_landmark_index,
                                     const vector<Mat_<double> >& regression_targets,
-                                    int fern_pixel_num);
+                                    int fern_pixel_num,
+                                    bool model_compress_flag,
+                                    const Mat_<double>& sparse_basis);
         Mat_<double> Predict(const Mat_<uchar>& image,
                              const Mat_<double>& shape,
                              const Mat_<double>& rotation,
@@ -89,6 +92,7 @@ class Fern{
                              double scale);
         void Read(ifstream& fin);
         void Write(ofstream& fout);
+        Mat_<double> GetFernOutput(int index);
 };
 
 class FernCascade{
@@ -100,7 +104,8 @@ class FernCascade{
                                     const Mat_<double>& mean_shape,
                                     int second_level_num,
                                     int candidate_pixel_num,
-                                    int fern_pixel_num);  
+                                    int fern_pixel_num,
+                                    bool model_compress_flag);  
         Mat_<double> Predict(const Mat_<uchar>& image, 
                           const BoundingBox& bounding_box, 
                           const Mat_<double>& mean_shape,
@@ -120,7 +125,8 @@ class ShapeRegressor{
                    const vector<BoundingBox>& bounding_box,
                    int first_level_num, int second_level_num,
                    int candidate_pixel_num, int fern_pixel_num,
-                   int initial_num);
+                   int initial_num,
+                   bool model_compress_flag);
         Mat_<double> Predict(const Mat_<uchar>& image, const BoundingBox& bounding_box, int initial_num);
         void Read(ifstream& fin);
         void Write(ofstream& fout);
@@ -143,4 +149,9 @@ void SimilarityTransform(const Mat_<double>& shape1, const Mat_<double>& shape2,
                          Mat_<double>& rotation,double& scale);
 double calculate_covariance(const vector<double>& v_1, 
                             const vector<double>& v_2);
+void OthogonalMatchingPursuit(const Mat_<double>& A,                              
+                              const Mat_<double>& b,
+                              int k,
+                              Mat_<double>& x);
+
 #endif

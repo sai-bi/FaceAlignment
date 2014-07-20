@@ -45,7 +45,8 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
                    const vector<BoundingBox>& bounding_box,
                    int first_level_num, int second_level_num,
                    int candidate_pixel_num, int fern_pixel_num,
-                   int initial_num){
+                   int initial_num,
+                   bool model_compress_flag){
     cout<<"Start training..."<<endl;
     bounding_box_ = bounding_box;
     training_shapes_ = ground_truth_shapes;
@@ -62,7 +63,8 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
         for(int j = 0;j < initial_num;j++){
             int index = 0;
             do{
-                index = (i+j+1) % (images.size()); 
+                // index = (i+j+1) % (images.size()); 
+                index = random_generator.uniform(0,images.size()); 
             }while(index == i);
             augmented_images.push_back(images[i]);
             augmented_ground_truth_shapes.push_back(ground_truth_shapes[i]);
@@ -85,7 +87,7 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
     for(int i = 0;i < first_level_num;i++){
         cout<<"Training fern cascades: "<<i+1<<" out of "<<first_level_num<<endl;
         prediction = fern_cascades_[i].Train(augmented_images,current_shapes,
-                augmented_ground_truth_shapes,augmented_bounding_box,mean_shape_,second_level_num,candidate_pixel_num,fern_pixel_num);
+                augmented_ground_truth_shapes,augmented_bounding_box,mean_shape_,second_level_num,candidate_pixel_num,fern_pixel_num, model_compress_flag);
         
         // update current shapes 
         for(int j = 0;j < prediction.size();j++){

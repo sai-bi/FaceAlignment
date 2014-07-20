@@ -33,7 +33,8 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
                                     const Mat_<double>& mean_shape,
                                     int second_level_num,
                                     int candidate_pixel_num,
-                                    int fern_pixel_num){
+                                    int fern_pixel_num,
+                                    bool model_compress_flag){
     Mat_<double> candidate_pixel_locations(candidate_pixel_num,2);
     Mat_<int> nearest_landmark_index(candidate_pixel_num,1);
     vector<Mat_<double> > regression_targets;
@@ -121,16 +122,51 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
         prediction[i] = Mat::zeros(mean_shape.rows,2,CV_64FC1); 
     } 
     ferns_.resize(second_level_num);
+
+    Mat_<double> regression_targets_copy = regression_targets.clone(); 
+    Mat_<double> sparse_basis;
     for(int i = 0;i < second_level_num;i++){
         cout<<"Training ferns: "<<i+1<<" out of "<<second_level_num<<endl;
-        vector<Mat_<double> > temp = ferns_[i].Train(densities,covariance,candidate_pixel_locations,nearest_landmark_index,regression_targets,fern_pixel_num);     
-        // update regression targets
+        
+        vector<Mat_<double> > temp = ferns_[i].Train(densities,covariance,candidate_pixel_locations,
+                nearest_landmark_index,regression_targets_copy,fern_pixel_num,false,sparse_basis);     
+        
         for(int j = 0;j < temp.size();j++){
             prediction[j] = prediction[j] + temp[j];
-            regression_targets[j] = regression_targets[j] - temp[j];
+            regression_targets_copy[j] = regression_targets_copy[j] - temp[j]; 
         }  
     }
     
+    if(model_compress_flag == true){
+        for(int i = 0;i < regression_targets.size();i++){
+            prediction[i] = Mat::zeros(mean_shape.rows,2,CV_64FC1); 
+        } 
+        // random sample from output of ferns to get sparse basis, there are in total 
+        // (second_level_num * 2^fern_pixel_num) outputs;
+        int basis_number = 512;
+        int landmark_num = prediction[0].rows; 
+        sparse_basis = Mat_<double>(landmark_num,basis_number);
+        int bin_num = pow(2.0,fern_pixel_num);
+        Mat_<int> index(second_level_num * bin_num,1);
+        for(int i = 0;i < index.rows;i++){
+            index(i) = i;
+        } 
+        randShuffle(index,0,random_generator);
+        for(int i = 0;i < basis_number;i++){
+            Mat_<double> temp = ferns[index(i)/bin_num].GetFernOutput(index(i) % bin_num);
+            temp.copyTo(sparse_basis(Range::all(), Range(i,i+1)));  
+        }
+        // after get basis, reconstruct the fern
+        for(int i = 0;i < second_level_num;i++){
+            vector<Mat_<double> > temp = ferns_[i].Train(densities,covariance,candidate_pixel_locations,
+                nearest_landmark_index,regression_targets_copy,fern_pixel_num,true,sparse_basis); 
+            for(int j = 0;j < temp.size();j++){
+                prediction[j] = prediction[j] + temp[j];
+                regression_targets[j] = regression_targets[j] - temp[j];
+            }  
+        }
+    }
+
     for(int i = 0;i < prediction.size();i++){
         Mat_<double> rotation;
         double scale;

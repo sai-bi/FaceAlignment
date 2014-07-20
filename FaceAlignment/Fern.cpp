@@ -32,7 +32,9 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
                                   const Mat_<double>& candidate_pixel_locations,
                                   const Mat_<int>& nearest_landmark_index,
                                   const vector<Mat_<double> >& regression_targets,
-                                  int fern_pixel_num){
+                                  int fern_pixel_num,
+                                  bool model_compress_flag,
+                                  const Mat_<double>& sparse_basis){
     // selected_pixel_index_: fern_pixel_num*2 matrix, the index of selected pixels pairs in fern
     // selected_pixel_locations_: fern_pixel_num*4 matrix, the locations of selected pixel pairs
     //                            stored in the format (x_1,y_1,x_2,y_2) for each row 
@@ -149,6 +151,7 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
     vector<Mat_<double> > prediction;
     prediction.resize(regression_targets.size());
     bin_output_.resize(bin_num);
+    sparse_output_.resize(bin_num);
     for(int i = 0;i < bin_num;i++){
         Mat_<double> temp = Mat::zeros(landmark_num_,2, CV_64FC1);
         int bin_size = shapes_in_bin[i].size();
@@ -157,9 +160,10 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
             temp = temp + regression_targets[index]; 
         }
         if(bin_size == 0){
-            bin_output_[i] = temp;
+            bin_output_[i] = temp; 
             continue; 
         }
+         
         temp = (1.0/((1.0+1000.0/bin_size) * bin_size)) * temp;
         bin_output_[i] = temp;
         for(int j = 0;j < bin_size;j++){
@@ -245,5 +249,9 @@ Mat_<double> Fern::Predict(const Mat_<uchar>& image,
     }
     return bin_output_[index];
    
+}
+
+Mat_<double> Fern::GetFernOutput(int index){
+    return bin_output_[index];
 }
 
