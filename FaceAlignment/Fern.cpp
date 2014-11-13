@@ -63,7 +63,7 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
         // project regression targets along the random direction 
         for(int j = 0;j < regression_targets.size();j++){
             double temp = 0;
-			temp = sum(regression_targets[j].mul(random_direction))[0]; 
+            temp = sum(regression_targets[j].mul(random_direction))[0]; 
             projection_result[j] = temp;
         } 
         Mat_<double> covariance_projection_density(candidate_pixel_num,1);

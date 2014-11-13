@@ -63,9 +63,9 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
     for(int i = 0;i < images.size();i++){
         for(int j = 0;j < initial_num;j++){
             int index = 0;
-			do{
-				// index = (i+j+1) % (images.size()); 
-				index = random_generator.uniform(0, images.size());
+            do{
+                // index = (i+j+1) % (images.size()); 
+                index = random_generator.uniform(0, images.size());
             }while(index == i);
             augmented_images.push_back(images[i]);
             augmented_ground_truth_shapes.push_back(ground_truth_shapes[i]);

@@ -46,7 +46,7 @@ int main(){
     fin.open("./../../../Data/COFW_Dataset/boundingbox_test.txt");
     for(int i = 0;i < test_img_num;i++){
         BoundingBox temp;
-		fin>>temp.start_x>>temp.start_y>>temp.width>>temp.height;
+        fin>>temp.start_x>>temp.start_y>>temp.width>>temp.height;
         temp.centroid_x = temp.start_x + temp.width/2.0;
         temp.centroid_y = temp.start_y + temp.height/2.0; 
         test_bounding_box.push_back(temp);
@@ -66,7 +66,7 @@ int main(){
             circle(test_image_1,Point2d(current_shape(i,0),current_shape(i,1)),3,Scalar(255,0,0),-1,8,0);
         }
         imshow("result",test_image_1);
-		waitKey(0);
+        waitKey(0);
     }
     return 0;
 }

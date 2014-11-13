@@ -36,8 +36,8 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
                                     int second_level_num,
                                     int candidate_pixel_num,
                                     int fern_pixel_num,
-									int curr_level_num, 
-									int first_level_num){
+                                    int curr_level_num, 
+                                    int first_level_num){
     Mat_<double> candidate_pixel_locations(candidate_pixel_num,2);
     Mat_<int> nearest_landmark_index(candidate_pixel_num,1);
     vector<Mat_<double> > regression_targets;
@@ -124,7 +124,7 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
         prediction[i] = Mat::zeros(mean_shape.rows,2,CV_64FC1); 
     } 
     ferns_.resize(second_level_num);
-	clock_t t = clock();
+    clock_t t = clock();
     for(int i = 0;i < second_level_num;i++){
         vector<Mat_<double> > temp = ferns_[i].Train(densities,covariance,candidate_pixel_locations,nearest_landmark_index,regression_targets,fern_pixel_num);     
         // update regression targets
@@ -132,15 +132,15 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
             prediction[j] = prediction[j] + temp[j];
             regression_targets[j] = regression_targets[j] - temp[j];
         }  
-		if((i+1) % 50 == 0){
-			cout<<"Fern cascades: "<< curr_level_num << " out of "<< first_level_num<<"; "; 
-			cout<<"Ferns: "<<i+1<<" out of "<<second_level_num<<endl;
-			double remaining_level_num= (first_level_num - curr_level_num) * 500 + second_level_num - i; 
-			double time_remaining = 0.02 * double(clock() - t)  / CLOCKS_PER_SEC * remaining_level_num;
-			cout<<"Expected remaining time: "
-				<< (int)time_remaining / 60<<"min "<<(int)time_remaining % 60 <<"s"<<endl; 
-			t = clock();
-		}
+        if((i+1) % 50 == 0){
+            cout<<"Fern cascades: "<< curr_level_num << " out of "<< first_level_num<<"; "; 
+            cout<<"Ferns: "<<i+1<<" out of "<<second_level_num<<endl;
+            double remaining_level_num= (first_level_num - curr_level_num) * 500 + second_level_num - i; 
+            double time_remaining = 0.02 * double(clock() - t)  / CLOCKS_PER_SEC * remaining_level_num;
+            cout<<"Expected remaining time: "
+                << (int)time_remaining / 60<<"min "<<(int)time_remaining % 60 <<"s"<<endl; 
+            t = clock();
+        }
     }
     
     for(int i = 0;i < prediction.size();i++){

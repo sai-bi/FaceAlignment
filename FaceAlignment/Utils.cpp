@@ -119,14 +119,14 @@ void SimilarityTransform(const Mat_<double>& shape1, const Mat_<double>& shape2,
 }
 
 double calculate_covariance(const vector<double>& v_1, 
-							const vector<double>& v_2){
-	Mat_<double> v1(v_1);
-	Mat_<double> v2(v_2);
-	double mean_1 = mean(v1)[0];
-	double mean_2 = mean(v2)[0];
-	v1 = v1 - mean_1;
-	v2 = v2 - mean_2;
-	return mean(v1.mul(v2))[0]; 
+                            const vector<double>& v_2){
+    Mat_<double> v1(v_1);
+    Mat_<double> v2(v_2);
+    double mean_1 = mean(v1)[0];
+    double mean_2 = mean(v2)[0];
+    v1 = v1 - mean_1;
+    v2 = v2 - mean_2;
+    return mean(v1.mul(v2))[0]; 
 }
 
 
