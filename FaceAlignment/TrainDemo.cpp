@@ -26,6 +26,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "FaceAlignment.h"
+using namespace std;
+using namespace cv;
 
 int main(){
     int img_num = 1345;
@@ -40,7 +42,7 @@ int main(){
     
     cout<<"Read images..."<<endl;
     for(int i = 0;i < img_num;i++){
-        string image_name = "./../../CRP/rcpr_v2/data/trainingImages/";
+        string image_name = "./../../../Data/COFW_Dataset/trainingImages/";
         image_name = image_name + to_string(i+1) + ".jpg";
         Mat_<uchar> temp = imread(image_name,0);
         images.push_back(temp);
@@ -49,7 +51,7 @@ int main(){
     vector<Mat_<double> > ground_truth_shapes;
     vector<BoundingBox> bounding_box;
     ifstream fin;
-    fin.open("./../../CRP/rcpr_v2/data/boundingbox.txt");
+    fin.open("./../../../Data/COFW_Dataset/boundingbox.txt");
     for(int i = 0;i < img_num;i++){
         BoundingBox temp;
         fin>>temp.start_x>>temp.start_y>>temp.width>>temp.height;
@@ -59,7 +61,7 @@ int main(){
     }
     fin.close(); 
 
-    fin.open("./../../CRP/rcpr_v2/data/keypoints.txt");
+    fin.open("./../../../Data/COFW_Dataset/keypoints.txt");
     for(int i = 0;i < img_num;i++){
         Mat_<double> temp(landmark_num,2);
         for(int j = 0;j < landmark_num;j++){

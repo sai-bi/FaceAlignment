@@ -26,6 +26,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "FaceAlignment.h"
+using namespace std;
+using namespace cv;
 
 vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel_intensity, 
                                   const Mat_<double>& covariance,
@@ -53,26 +55,22 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
     RNG random_generator(getTickCount());
     for(int i = 0;i < fern_pixel_num;i++){
         // RNG random_generator(i);
-        Mat_<double> random_direction(landmark_num_ * 2,1);
+        Mat_<double> random_direction(landmark_num_ ,2);
         random_generator.fill(random_direction,RNG::UNIFORM,-1.1,1.1);
 
         normalize(random_direction,random_direction);
-        // Mat_<double> projection_result(regression_targets.size(),1);
-        vector<double> projection_result; 
+        vector<double> projection_result(regression_targets.size(), 0); 
         // project regression targets along the random direction 
         for(int j = 0;j < regression_targets.size();j++){
             double temp = 0;
-            for(int k = 0;k < regression_targets[j].rows;k++){
-                temp = temp + regression_targets[j](k,0) * random_direction(2*k) 
-                    + regression_targets[j](k,1) * random_direction(2*k+1); 
-            }
-            projection_result.push_back(temp);
+			temp = sum(regression_targets[j].mul(random_direction))[0]; 
+            projection_result[j] = temp;
         } 
-
         Mat_<double> covariance_projection_density(candidate_pixel_num,1);
         for(int j = 0;j < candidate_pixel_num;j++){
             covariance_projection_density(j) = calculate_covariance(projection_result,candidate_pixel_intensity[j]);
         }
+
 
         // find max correlation
         double max_correlation = -1;
@@ -127,7 +125,6 @@ vector<Mat_<double> > Fern::Train(const vector<vector<double> >& candidate_pixel
 
         threshold_(i) = random_generator.uniform(-0.2*max_diff,0.2*max_diff); 
     } 
-
 
     // determine the bins of each shape
     vector<vector<int> > shapes_in_bin;

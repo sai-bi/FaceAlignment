@@ -26,6 +26,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "FaceAlignment.h"
+using namespace std;
+using namespace cv;
 vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
                                     const vector<Mat_<double> >& current_shapes,
                                     const vector<Mat_<double> >& ground_truth_shapes,
@@ -33,7 +35,9 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
                                     const Mat_<double>& mean_shape,
                                     int second_level_num,
                                     int candidate_pixel_num,
-                                    int fern_pixel_num){
+                                    int fern_pixel_num,
+									int curr_level_num, 
+									int first_level_num){
     Mat_<double> candidate_pixel_locations(candidate_pixel_num,2);
     Mat_<int> nearest_landmark_index(candidate_pixel_num,1);
     vector<Mat_<double> > regression_targets;
@@ -50,7 +54,6 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
         double scale;
         SimilarityTransform(mean_shape,ProjectShape(current_shapes[i],bounding_box[i]),rotation,scale);
         transpose(rotation,rotation);
-
         regression_targets[i] = scale * regression_targets[i] * rotation;
     }
 
@@ -121,14 +124,23 @@ vector<Mat_<double> > FernCascade::Train(const vector<Mat_<uchar> >& images,
         prediction[i] = Mat::zeros(mean_shape.rows,2,CV_64FC1); 
     } 
     ferns_.resize(second_level_num);
+	clock_t t = clock();
     for(int i = 0;i < second_level_num;i++){
-        cout<<"Training ferns: "<<i+1<<" out of "<<second_level_num<<endl;
         vector<Mat_<double> > temp = ferns_[i].Train(densities,covariance,candidate_pixel_locations,nearest_landmark_index,regression_targets,fern_pixel_num);     
         // update regression targets
         for(int j = 0;j < temp.size();j++){
             prediction[j] = prediction[j] + temp[j];
             regression_targets[j] = regression_targets[j] - temp[j];
         }  
+		if((i+1) % 50 == 0){
+			cout<<"Fern cascades: "<< curr_level_num << " out of "<< first_level_num<<"; "; 
+			cout<<"Ferns: "<<i+1<<" out of "<<second_level_num<<endl;
+			double remaining_level_num= (first_level_num - curr_level_num) * 500 + second_level_num - i; 
+			double time_remaining = 0.02 * double(clock() - t)  / CLOCKS_PER_SEC * remaining_level_num;
+			cout<<"Expected remaining time: "
+				<< (int)time_remaining / 60<<"min "<<(int)time_remaining % 60 <<"s"<<endl; 
+			t = clock();
+		}
     }
     
     for(int i = 0;i < prediction.size();i++){

@@ -26,6 +26,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "FaceAlignment.h"
+using namespace std;
+using namespace cv;
 
 Mat_<double> GetMeanShape(const vector<Mat_<double> >& shapes,
                           const vector<BoundingBox>& bounding_box){
@@ -117,24 +119,14 @@ void SimilarityTransform(const Mat_<double>& shape1, const Mat_<double>& shape2,
 }
 
 double calculate_covariance(const vector<double>& v_1, 
-                            const vector<double>& v_2){
-    assert(v_1.size() == v_2.size());
-    assert(v_1.size() != 0);
-    double sum_1 = 0;
-    double sum_2 = 0;
-    double exp_1 = 0;
-    double exp_2 = 0;
-    double exp_3 = 0;
-    for(int i = 0;i < v_1.size();i++){
-        sum_1 += v_1[i];
-        sum_2 += v_2[i];
-    }
-    exp_1 = sum_1 / v_1.size();
-    exp_2 = sum_2 / v_2.size();
-    for(int i = 0;i < v_1.size();i++){
-        exp_3 = exp_3 + (v_1[i] - exp_1) * (v_2[i] - exp_2);
-    }
-    return exp_3 / v_1.size();
+							const vector<double>& v_2){
+	Mat_<double> v1(v_1);
+	Mat_<double> v2(v_2);
+	double mean_1 = mean(v1)[0];
+	double mean_2 = mean(v2)[0];
+	v1 = v1 - mean_1;
+	v2 = v2 - mean_2;
+	return mean(v1.mul(v2))[0]; 
 }
 
 

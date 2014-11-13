@@ -25,6 +25,8 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include "FaceAlignment.h"
+using namespace std;
+using namespace cv;
 
 ShapeRegressor::ShapeRegressor(){
     first_level_num_ = 0;
@@ -61,8 +63,9 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
     for(int i = 0;i < images.size();i++){
         for(int j = 0;j < initial_num;j++){
             int index = 0;
-            do{
-                index = (i+j+1) % (images.size()); 
+			do{
+				// index = (i+j+1) % (images.size()); 
+				index = random_generator.uniform(0, images.size());
             }while(index == i);
             augmented_images.push_back(images[i]);
             augmented_ground_truth_shapes.push_back(ground_truth_shapes[i]);
@@ -85,7 +88,7 @@ void ShapeRegressor::Train(const vector<Mat_<uchar> >& images,
     for(int i = 0;i < first_level_num;i++){
         cout<<"Training fern cascades: "<<i+1<<" out of "<<first_level_num<<endl;
         prediction = fern_cascades_[i].Train(augmented_images,current_shapes,
-                augmented_ground_truth_shapes,augmented_bounding_box,mean_shape_,second_level_num,candidate_pixel_num,fern_pixel_num);
+                augmented_ground_truth_shapes,augmented_bounding_box,mean_shape_,second_level_num,candidate_pixel_num,fern_pixel_num, i+1, first_level_num);
         
         // update current shapes 
         for(int j = 0;j < prediction.size();j++){
