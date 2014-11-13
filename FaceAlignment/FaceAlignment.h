@@ -75,16 +75,16 @@ class Fern{
         std::vector<cv::Mat_<double> > bin_output_;
     public:
         std::vector<cv::Mat_<double> > Train(const std::vector<std::vector<double> >& candidate_pixel_intensity, 
-                                    const cv::Mat_<double>& covariance,
-                                    const cv::Mat_<double>& candidate_pixel_locations,
-                                    const cv::Mat_<int>& nearest_landmark_index,
-                                    const std::vector<cv::Mat_<double> >& regression_targets,
-                                    int fern_pixel_num);
+											 const cv::Mat_<double>& covariance,
+											 const cv::Mat_<double>& candidate_pixel_locations,
+											 const cv::Mat_<int>& nearest_landmark_index,
+											 const std::vector<cv::Mat_<double> >& regression_targets,
+											 int fern_pixel_num);
         cv::Mat_<double> Predict(const cv::Mat_<uchar>& image,
-                             const cv::Mat_<double>& shape,
-                             const cv::Mat_<double>& rotation,
-                             const BoundingBox& bounding_box,
-                             double scale);
+								 const cv::Mat_<double>& shape,
+								 const cv::Mat_<double>& rotation,
+								 const BoundingBox& bounding_box,
+								 double scale);
         void Read(std::ifstream& fin);
         void Write(std::ofstream& fout);
 };
@@ -92,19 +92,19 @@ class Fern{
 class FernCascade{
     public:
         std::vector<cv::Mat_<double> > Train(const std::vector<cv::Mat_<uchar> >& images,
-                                    const std::vector<cv::Mat_<double> >& current_shapes,
-                                    const std::vector<cv::Mat_<double> >& ground_truth_shapes,
-                                    const std::vector<BoundingBox> & bounding_box,
-                                    const cv::Mat_<double>& mean_shape,
-                                    int second_level_num,
-                                    int candidate_pixel_num,
-                                    int fern_pixel_num,
-									int curr_level_num,
-									int first_level_num);  
-        cv::Mat_<double> Predict(const cv::Mat_<uchar>& image, 
-                          const BoundingBox& bounding_box, 
-                          const cv::Mat_<double>& mean_shape,
-                          const cv::Mat_<double>& shape);
+											 const std::vector<cv::Mat_<double> >& current_shapes,
+											 const std::vector<cv::Mat_<double> >& ground_truth_shapes,
+											 const std::vector<BoundingBox> & bounding_box,
+											 const cv::Mat_<double>& mean_shape,
+											 int second_level_num,
+											 int candidate_pixel_num,
+											 int fern_pixel_num,
+											 int curr_level_num,
+											 int first_level_num);  
+		cv::Mat_<double> Predict(const cv::Mat_<uchar>& image, 
+								 const BoundingBox& bounding_box, 
+								 const cv::Mat_<double>& mean_shape,
+								 const cv::Mat_<double>& shape);
         void Read(std::ifstream& fin);
         void Write(std::ofstream& fout);
     private:
@@ -136,7 +136,7 @@ class ShapeRegressor{
 };
 
 cv::Mat_<double> GetMeanShape(const std::vector<cv::Mat_<double> >& shapes,
-                          const std::vector<BoundingBox>& bounding_box);
+							  const std::vector<BoundingBox>& bounding_box);
 cv::Mat_<double> ProjectShape(const cv::Mat_<double>& shape, const BoundingBox& bounding_box);
 cv::Mat_<double> ReProjectShape(const cv::Mat_<double>& shape, const BoundingBox& bounding_box);
 void SimilarityTransform(const cv::Mat_<double>& shape1, const cv::Mat_<double>& shape2, 
