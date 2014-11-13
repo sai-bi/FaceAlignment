@@ -6,9 +6,8 @@ extremely fast both in training and testing.
 Please go to folder `FaceAlignment` to see the source files.
 
 ###Update
-Nov 10, 2014
-
-Improve the speed of model training. Now it takes about 40 min to train a model on 1345 images with 20 initial for each on a Core i7 3.40 GHz CPU. Considering no parallel programing is used, this performance is acceptable.
+* Nov 13, 2014
+	Improve the speed of model training. Now it takes about 40 min to train a model on 1345 images with 20 initial for each on a Core i7 3.40 GHz CPU. Considering no parallel programing is used, this performance is acceptable.
 
 ###Usage
 To compile the program(OpenCV required):
@@ -42,11 +41,9 @@ I have prepared a model trained by me on COFW dataset, and you can access it [he
 
 ###FAQ
 1. How to get the bounding box of an input face image?
-
-You can get the bounding box with a face detector, which has been implemented in OpenCV. However, do remember that, if you use the model provided by me, you must provide a bounding box of similar measure with the training data. Otherwise, the result will be poor. If the bounding box of training data is very small, but you provide a very big bounding box for testing data, it is certain that you will get a poor result. Here the same measure doesn't mean that they have to be the same size, but they have to be taken using the same standard, for example, the ratio between bounding box width and the two-eye distance should be the same.
+	You can get the bounding box with a face detector, which has been implemented in OpenCV. However, do remember that, if you use the model provided by me, you must provide a bounding box of similar measure with the training data. Otherwise, the result will be poor. If the bounding box of training data is very small, but you provide a very big bounding box for testing data, it is certain that you will get a poor result. Here the same measure doesn't mean that they have to be the same size, but they have to be taken using the same standard, for example, the ratio between bounding box width and the two-eye distance should be the same.
 2. It seems that there are still some errors when I do testing, so is there any problem?
-
-Generally speaking, the dataset attached is very challenging because it includes heavy occlusions and large shape variations. You could try other standard datasets such as Helen and LFW, which should lead to better performance. 
+	Generally speaking, the dataset attached is very challenging because it includes heavy occlusions and large shape variations. You could try other standard datasets such as Helen and LFW, which should lead to better performance. 
 
 ###Contact
 If you have any question about the code, I prefer that you create an **issue** on GitHub rather than send me emails directly, so that others can also refer to it when they have problems. I will respond to it as soon as possible.
